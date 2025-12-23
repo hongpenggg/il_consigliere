@@ -544,6 +544,10 @@ YOU:
       else:
         print('Try again!')
         print()
+        # flag, answer, key, link, move forward
+        # HAHAHAHAHAH. Great try, but of course the key isn't labelled flag :)
+        # also, because there's a lot of lists in the program, please don't go around searching for "[]"
+        # really.
 
     print(f"MAYOR: Sig {self.name}! I'm so sorry...")
     print("MAYOR: Please let my wife go. I'll do anything!")
