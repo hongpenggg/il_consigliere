@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html, body {
+    @apply bg-background text-on-surface font-body;
+    overflow: hidden;
+  }
+
+  ::selection {
+    @apply bg-primary-container text-on-primary-container;
+  }
+}
+
+@layer components {
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 200, 'GRAD' 0, 'opsz' 24;
+    font-size: 1.25rem;
+    font-family: 'Material Symbols Outlined';
+    font-style: normal;
+    line-height: 1;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    user-select: none;
+  }
+
+  .glass-panel {
+    background: rgba(32, 31, 31, 0.7);
+    backdrop-filter: blur(12px);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #131313;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #89070e;
+  }
+
+  .grain-overlay {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0.03;
+    mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.65' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  }
+
+  .noir-vignette {
+    box-shadow: inset 0 0 150px rgba(0,0,0,0.9);
+  }
+
+  .ledger-row:nth-child(even) {
+    background-color: rgba(255, 255, 255, 0.02);
+  }
+
+  .mechanical-btn {
+    transition: transform 0.05s;
+  }
+  .mechanical-btn:active {
+    transform: translate(1px, 1px);
+  }
+
+  .input-ledger {
+    border: none;
+    border-bottom: 1px solid rgba(90, 64, 60, 0.4);
+    background: transparent;
+    transition: all 0.3s ease;
+  }
+  .input-ledger:focus {
+    outline: none;
+    border-bottom: 2px solid #ffb4ac;
+    box-shadow: none;
+  }
+}
