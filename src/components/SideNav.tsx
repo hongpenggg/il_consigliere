@@ -9,7 +9,8 @@ const NAV_ITEMS = [
   { path: '/ledger',   icon: 'payments',        label: 'Ledger' },
   { path: '/war-room', icon: 'military_tech',   label: 'War Room' },
   { path: '/dialogue', icon: 'forum',           label: 'Intelligence' },
-  { path: '/dialogue', icon: 'gavel',           label: 'Diplomacy' },
+  { path: '/diplomacy',icon: 'gavel',           label: 'Diplomacy' },
+  { path: '/tutorial', icon: 'menu_book',       label: 'Tutorial' },
 ]
 
 export const SideNav: FC = () => {
