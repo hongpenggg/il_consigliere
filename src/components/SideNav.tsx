@@ -1,4 +1,4 @@
-import React from 'react'
+import type { FC } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { formatLira } from '@/lib/utils'
@@ -8,10 +8,10 @@ const NAV_ITEMS = [
   { path: '/ledger', icon: 'payments', label: 'Ledger' },
   { path: '/war-room', icon: 'military_tech', label: 'War Room' },
   { path: '/dialogue', icon: 'forum', label: 'Intelligence' },
-  { path: '/dialogue', icon: 'gavel', label: 'Diplomacy' }
+  { path: '/dialogue', icon: 'gavel', label: 'Diplomacy' },
 ]
 
-export const SideNav: React.FC = () => {
+export const SideNav: FC = () => {
   const { player } = useGameStore()
   const navigate = useNavigate()
 
@@ -21,7 +21,12 @@ export const SideNav: React.FC = () => {
       <div className="p-6 border-b border-[#ffb4ac]/10">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-surface-container-high flex items-center justify-center border border-primary/20">
-            <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+            <span
+              className="material-symbols-outlined text-primary text-3xl"
+              style={{ fontVariationSettings: "'FILL' 1" }}
+            >
+              shield
+            </span>
           </div>
           <div>
             <h3 className="font-headline text-lg font-bold text-on-surface leading-tight">
@@ -58,7 +63,9 @@ export const SideNav: React.FC = () => {
       <div className="mt-auto border-t border-[#ffb4ac]/10 p-4 flex flex-col gap-2">
         <div className="px-2 py-2">
           <p className="font-label text-[9px] uppercase text-gray-500">Treasury</p>
-          <p className="font-label text-sm text-secondary font-bold">{formatLira(player?.wealth ?? 1200000)}</p>
+          <p className="font-label text-sm text-secondary font-bold">
+            {formatLira(player?.wealth ?? 1200000)}
+          </p>
         </div>
         <button
           onClick={() => navigate('/')}
@@ -67,11 +74,15 @@ export const SideNav: React.FC = () => {
           Expand Territory
         </button>
         <div className="flex justify-between px-2 mt-2">
-          <span className="material-symbols-outlined text-gray-500 cursor-pointer hover:text-on-surface">settings</span>
+          <span className="material-symbols-outlined text-gray-500 cursor-pointer hover:text-on-surface">
+            settings
+          </span>
           <button
             onClick={() => navigate('/')}
             className="material-symbols-outlined text-gray-500 cursor-pointer hover:text-error"
-          >logout</button>
+          >
+            logout
+          </button>
         </div>
       </div>
     </aside>
