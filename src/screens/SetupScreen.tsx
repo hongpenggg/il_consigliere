@@ -6,15 +6,17 @@ import type { PlayerStats } from '@/types'
 type Affiliation = PlayerStats['affiliation']
 type Territory = PlayerStats['territory']
 
+// Affiliations aligned with the PlayerStats union type
 const AFFILIATIONS: { value: Affiliation; label: string; desc: string }[] = [
   { value: 'cosa_nostra', label: 'Cosa Nostra', desc: 'The original. Roots in Sicily, reach across the Atlantic.' },
-  { value: 'genovese', label: 'Genovese Family', desc: 'Quiet power. The most politically connected outfit in New York.' },
-  { value: 'gambino', label: 'Gambino Family', desc: 'Ambitious and ruthless. Empire built on loyalty and fear.' },
+  { value: 'camorra',     label: 'Camorra',     desc: 'Naples. Street-level power. Fast, ruthless, loyal to coin.' },
+  { value: 'ndrangheta',  label: "'Ndrangheta",  desc: 'Calabria. Blood ties only. The most secretive family.' },
+  { value: 'independent', label: 'Independent',  desc: 'No flag. No loyalty. Only opportunity.' },
 ]
 
 const TERRITORIES: { value: Territory; label: string; desc: string }[] = [
-  { value: 'italy', label: 'Italy', desc: 'The old country. Sicily, Naples, Rome — blood and stone.' },
-  { value: 'usa', label: 'United States', desc: 'Manhattan, Brooklyn, Chicago — the new empire.' },
+  { value: 'italy', label: 'Italy',         desc: 'The old country. Sicily, Naples, Rome — blood and stone.' },
+  { value: 'usa',   label: 'United States', desc: 'Manhattan, Brooklyn, Chicago — the new empire.' },
 ]
 
 function GrainOverlay() {
