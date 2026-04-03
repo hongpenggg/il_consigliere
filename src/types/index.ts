@@ -1,9 +1,11 @@
+// ─── Player ──────────────────────────────────────────────────────────────────
+
 export interface PlayerStats {
   id: string
   name: string
   familyName: string
-  territory: 'italy' | 'usa'
-  affiliation: 'cosa_nostra' | 'genovese' | 'gambino'
+  territory: string
+  affiliation: 'cosa_nostra' | 'camorra' | 'ndrangheta' | 'independent'
   rank: string
   wealth: number
   loyalty: number
@@ -14,15 +16,37 @@ export interface PlayerStats {
   diplomacy: number
 }
 
+// ─── Narrative ───────────────────────────────────────────────────────────────
+
+export interface Choice {
+  id: string
+  text: string
+  effects: string[]
+  label: string
+}
+
+export interface StoryEvent {
+  id: string
+  content: string
+  choices: Choice[]
+  timestamp: string
+  chapter: number
+  speaker?: string
+  dialogue?: string
+}
+
+// ─── Family ──────────────────────────────────────────────────────────────────
+
 export interface FamilyMember {
   id: string
   name: string
   role: string
   loyalty: number
   familiarity: number
-  status: 'active' | 'compromised' | 'deceased'
-  avatarUrl?: string
+  status: 'active' | 'compromised' | 'eliminated' | 'unknown'
 }
+
+// ─── Territories ─────────────────────────────────────────────────────────────
 
 export interface Territory {
   id: string
@@ -39,61 +63,39 @@ export interface Territory {
   positionY: number
 }
 
+// ─── Ledger ──────────────────────────────────────────────────────────────────
+
+export type LedgerType = 'income' | 'expense' | 'bribe' | 'tribute' | 'penalty' | 'investment'
+
 export interface LedgerEntry {
   id: string
   description: string
   amount: number
-  type: 'income' | 'expense' | 'bribe' | 'tribute'
+  type: LedgerType
   timestamp: string
   territory?: string
 }
 
-export interface StoryEvent {
+// ─── Intel ───────────────────────────────────────────────────────────────────
+
+export type IntelSeverity = 'low' | 'medium' | 'high' | 'critical'
+
+export interface IntelReport {
   id: string
-  content: string
-  choices: Choice[]
+  title: string
+  description: string
+  severity: IntelSeverity
   timestamp: string
-  chapter: number
+  territory?: string
 }
 
-export interface Choice {
-  id: string
-  text: string
-  effects: StatEffect[]
-  label?: string
-}
-
-export interface StatEffect {
-  stat: keyof PlayerStats
-  delta: number
-  label: string
-}
+// ─── Saves ───────────────────────────────────────────────────────────────────
 
 export interface GameSave {
   id: string
   slotName: string
   playerStats: PlayerStats
   currentChapter: number
-  currentEvent?: StoryEvent
   lastSaved: string
   playTime: number
-}
-
-export interface IntelReport {
-  id: string
-  title: string
-  description: string
-  severity: 'low' | 'medium' | 'high' | 'critical'
-  timestamp: string
-  territory?: string
-}
-
-export interface Enterprise {
-  id: string
-  name: string
-  type: 'racket' | 'front' | 'union' | 'port' | 'casino'
-  territory: string
-  weeklyIncome: number
-  risk: number
-  status: 'operational' | 'compromised' | 'seized'
 }

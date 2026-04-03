@@ -1,28 +1,24 @@
-export const formatLira = (amount: number): string => {
-  const abs = Math.abs(amount)
-  if (abs >= 1_000_000) return `${(amount / 1_000_000).toFixed(1)}M Lira`
-  if (abs >= 1_000) return `${(amount / 1_000).toFixed(0)}K Lira`
-  return `${amount.toLocaleString()} Lira`
+import { type ClassValue, clsx } from 'clsx'
+import { twMerge } from 'tailwind-merge'
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs))
 }
 
-export const cn = (...classes: (string | undefined | false | null)[]): string =>
-  classes.filter(Boolean).join(' ')
-
-export const getSeverityColor = (severity: string): string => {
-  switch (severity) {
-    case 'critical': return 'text-error border-error'
-    case 'high': return 'text-primary border-primary'
-    case 'medium': return 'text-secondary border-secondary'
-    default: return 'text-on-surface-variant border-outline-variant'
-  }
+export function formatLira(n: number): string {
+  if (n >= 1_000_000) return `₤${(n / 1_000_000).toFixed(2)}M`
+  if (n >= 1_000) return `₤${(n / 1_000).toFixed(1)}K`
+  return `₤${n.toLocaleString()}`
 }
 
-export const getRankLabel = (heat: number): string => {
-  if (heat >= 80) return 'BURNED'
-  if (heat >= 60) return 'HOT'
-  if (heat >= 40) return 'WARM'
-  if (heat >= 20) return 'COOL'
-  return 'CLEAN'
+export function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  })
 }
 
-export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+export function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
+}
