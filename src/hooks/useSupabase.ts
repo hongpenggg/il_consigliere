@@ -43,7 +43,7 @@ export function useSupabaseAuth() {
 // meaningful state change so it always reflects the latest progress.
 
 export function useGameInstance() {
-  const { userId, player, setPlayer } = useGameStore()
+  const { userId, setPlayer } = useGameStore()
 
   /** Write (or overwrite) the current player snapshot to Supabase. */
   const saveInstance = useCallback(async (stats: PlayerStats) => {
