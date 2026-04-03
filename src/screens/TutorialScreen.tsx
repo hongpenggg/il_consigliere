@@ -172,8 +172,6 @@ function ObjectivesTask({ onComplete }: { onComplete: () => void }) {
   const [error, setError] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
 
-  const completed = Object.values(statusMap).filter((s) => s === 'done').length
-
   async function runTask(obj: typeof OBJECTIVES[number]) {
     setStatusMap((p) => ({ ...p, [obj.id]: 'running' }))
     for (const step of obj.steps) {
@@ -853,7 +851,6 @@ export default function TutorialScreen() {
               label="3. Too late, Sig Mayor! [Kill the hostage]"
               variant="danger"
               onClick={() => {
-                // Can't kill hostage — Ricci intervenes
                 setState((s) => ({ ...s }))
               }}
             />
