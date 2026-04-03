@@ -1,7 +1,7 @@
-import { lazy, Suspense, useEffect } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { lazy, Suspense, useEffect, useRef } from 'react'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
-import { useSupabaseAuth } from '@/hooks/useSupabase'
+import { useSupabaseAuth, useGameInstance } from '@/hooks/useSupabase'
 import { SideNav } from '@/components/SideNav'
 import TopBar from '@/components/TopBar'
 import type { PlayerStats } from '@/types'
@@ -37,7 +37,8 @@ function GameLayout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-background">
       <TopBar />
       <SideNav />
-      <main className="ml-64 pt-20 min-h-[calc(100vh-80px)] p-6">
+      {/* ml-64 offsets the fixed sidebar; pt-20 offsets the fixed TopBar */}
+      <main className="ml-64 pt-20 p-6">
         {children}
       </main>
     </div>
@@ -51,7 +52,6 @@ function RequirePlayer({ children }: { children: React.ReactNode }) {
   const setPlayer = useGameStore((s) => s.setPlayer)
   const location = useLocation()
 
-  // Attempt to restore from sessionStorage on first render
   if (!player) {
     try {
       const saved = sessionStorage.getItem(SESSION_KEY)
@@ -68,8 +68,7 @@ function RequirePlayer({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
-// ─── Player persistence ───────────────────────────────────────────────────────
-// Keeps sessionStorage in sync whenever player changes.
+// ─── Player persistence (sessionStorage) ─────────────────────────────────────
 function PlayerPersistence() {
   const player = useGameStore((s) => s.player)
   useEffect(() => {
@@ -82,6 +81,35 @@ function PlayerPersistence() {
   return null
 }
 
+// ─── Instance restore on login ────────────────────────────────────────────────
+// When a user signs in (userId becomes non-null) and no player is in the store,
+// check Supabase for an open game instance and restore it automatically.
+function InstanceRestorer() {
+  const userId          = useGameStore((s) => s.userId)
+  const player          = useGameStore((s) => s.player)
+  const instanceChecked = useGameStore((s) => s.instanceChecked)
+  const setInstanceChecked = useGameStore((s) => s.setInstanceChecked)
+  const { loadInstance } = useGameInstance()
+  const navigate = useNavigate()
+  const didRun = useRef(false)
+
+  useEffect(() => {
+    // Only run once per login session, when userId is fresh and no player loaded yet
+    if (!userId || player || instanceChecked || didRun.current) return
+    didRun.current = true
+
+    void loadInstance().then((found) => {
+      setInstanceChecked(true)
+      if (found) {
+        // Restored a previous game — take them straight back in
+        navigate('/game', { replace: true })
+      }
+    })
+  }, [userId, player, instanceChecked, loadInstance, navigate, setInstanceChecked])
+
+  return null
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
   useSupabaseAuth()
@@ -89,6 +117,7 @@ export default function App() {
   return (
     <>
       <PlayerPersistence />
+      <InstanceRestorer />
       <Suspense fallback={<GameLoader />}>
         <Routes>
           {/* Landing */}

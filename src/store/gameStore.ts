@@ -52,6 +52,10 @@ interface GameStore {
   userId: string | null
   setUserId: (id: string | null) => void
 
+  // Instance restore state — true once we've checked Supabase on login
+  instanceChecked: boolean
+  setInstanceChecked: (val: boolean) => void
+
   // Reset
   resetGame: () => void
 }
@@ -131,11 +135,15 @@ export const useGameStore = create<GameStore>((set) => ({
   userId: null,
   setUserId: (id) => set({ userId: id }),
 
+  instanceChecked: false,
+  setInstanceChecked: (val) => set({ instanceChecked: val }),
+
   resetGame: () => set({
     player: null,
     currentEvent: null,
     narrativeHistory: [],
     territories: DEFAULT_TERRITORIES,
-    familyMembers: DEFAULT_FAMILY
+    familyMembers: DEFAULT_FAMILY,
+    instanceChecked: false,
   })
 }))

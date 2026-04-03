@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
+import { useGameInstance } from '@/hooks/useSupabase'
 import type { PlayerStats } from '@/types'
 
 type Affiliation = PlayerStats['affiliation']
 type Territory = PlayerStats['territory']
 
-// Affiliations aligned with the PlayerStats union type
 const AFFILIATIONS: { value: Affiliation; label: string; desc: string }[] = [
   { value: 'cosa_nostra', label: 'Cosa Nostra', desc: 'The original. Roots in Sicily, reach across the Atlantic.' },
   { value: 'camorra',     label: 'Camorra',     desc: 'Naples. Street-level power. Fast, ruthless, loyal to coin.' },
@@ -35,14 +35,16 @@ function GrainOverlay() {
 export default function SetupScreen() {
   const navigate = useNavigate()
   const { setPlayer, userId } = useGameStore()
+  const { saveInstance } = useGameInstance()
 
   const [name, setName] = useState('')
   const [familyName, setFamilyName] = useState('')
   const [affiliation, setAffiliation] = useState<Affiliation>('cosa_nostra')
   const [territory, setTerritory] = useState<Territory>('italy')
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
 
-  function handleStart(e: React.FormEvent) {
+  async function handleStart(e: React.FormEvent) {
     e.preventDefault()
     if (!name.trim() || !familyName.trim()) {
       setError('Enter your name and family name to proceed.')
@@ -65,7 +67,13 @@ export default function SetupScreen() {
       diplomacy: 40,
     }
 
+    setSaving(true)
     setPlayer(player)
+
+    // Immediately persist to Supabase so it survives page reloads
+    await saveInstance(player)
+
+    setSaving(false)
     navigate('/game', { replace: true })
   }
 
@@ -91,7 +99,7 @@ export default function SetupScreen() {
           </h1>
         </header>
 
-        <form onSubmit={handleStart} className="w-full max-w-lg space-y-8">
+        <form onSubmit={(e) => void handleStart(e)} className="w-full max-w-lg space-y-8">
           {/* Name fields */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -199,10 +207,11 @@ export default function SetupScreen() {
 
           <button
             type="submit"
-            className="group w-full flex items-center justify-between px-6 py-4 bg-primary-container border-l-4 border-primary hover:bg-primary/20 transition-all active:translate-x-px active:translate-y-px"
+            disabled={saving}
+            className="group w-full flex items-center justify-between px-6 py-4 bg-primary-container border-l-4 border-primary hover:bg-primary/20 transition-all active:translate-x-px active:translate-y-px disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <span className="font-label text-sm font-bold uppercase tracking-widest text-on-primary-container group-hover:text-primary transition-colors">
-              Enter the City
+              {saving ? 'Saving...' : 'Enter the City'}
             </span>
             <span className="font-label text-xs text-primary group-hover:translate-x-0.5 transition-transform">
               →

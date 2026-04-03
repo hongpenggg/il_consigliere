@@ -7,9 +7,12 @@
     zoom: 0.9;
   }
 
+  /* Remove overflow:hidden — it blocked all scrolling.
+     Individual screens that truly need full-viewport lock
+     (e.g. HomeScreen landing) can add overflow-hidden locally. */
   html, body {
     @apply bg-background text-on-surface font-body;
-    overflow: hidden;
+    overflow-x: hidden;
   }
 
   ::selection {

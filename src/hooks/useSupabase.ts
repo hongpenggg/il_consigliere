@@ -37,6 +37,64 @@ export function useSupabaseAuth() {
   return { signIn, signUp, signInWithMagicLink, signOut }
 }
 
+// ─── Game Instances ───────────────────────────────────────────────────────────
+// A "game instance" is a row in `game_instances` that holds the full player
+// snapshot for a given user. One row per active game; we upsert on every
+// meaningful state change so it always reflects the latest progress.
+
+export function useGameInstance() {
+  const { userId, player, setPlayer } = useGameStore()
+
+  /** Write (or overwrite) the current player snapshot to Supabase. */
+  const saveInstance = useCallback(async (stats: PlayerStats) => {
+    if (!userId) return
+    await supabase.from('game_instances').upsert(
+      {
+        user_id:      userId,
+        player_stats: stats as unknown as Record<string, unknown>,
+        updated_at:   new Date().toISOString(),
+        status:       'active',
+      },
+      // Each user has exactly one active instance row keyed by user_id.
+      { onConflict: 'user_id' }
+    )
+  }, [userId])
+
+  /** Fetch the most recent open instance for this user. Returns true if found. */
+  const loadInstance = useCallback(async (): Promise<boolean> => {
+    if (!userId) return false
+    const { data, error } = await supabase
+      .from('game_instances')
+      .select('player_stats')
+      .eq('user_id', userId)
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    if (error || !data) return false
+
+    const stats = data.player_stats as unknown as PlayerStats
+    if (stats?.id) {
+      setPlayer(stats)
+      return true
+    }
+    return false
+  }, [userId, setPlayer])
+
+  /** Mark the instance as concluded (e.g. on game-over / conclude screen). */
+  const concludeInstance = useCallback(async () => {
+    if (!userId) return
+    await supabase
+      .from('game_instances')
+      .update({ status: 'concluded', updated_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .eq('status', 'active')
+  }, [userId])
+
+  return { saveInstance, loadInstance, concludeInstance }
+}
+
 // ─── Saves ────────────────────────────────────────────────────────────────────
 
 export function useGameSaves() {
@@ -100,7 +158,7 @@ export function useGameLedger() {
         description: d.description as string,
         amount:      d.amount      as number,
         type:        d.type        as LedgerEntry['type'],
-        timestamp:   d.created_at  as string,   // DB: created_at → TS: timestamp
+        timestamp:   d.created_at  as string,
         territory:   d.territory   as string | undefined
       })) as LedgerEntry[])
     }
@@ -120,8 +178,6 @@ export function useGameLedger() {
       type,
       ...(territory ? { territory } : {})
     })
-    // Realtime (useRealtime.ts) will push the new row into the store automatically.
-    // Call loadLedger() only if you need a full refresh.
   }, [userId])
 
   return { loadLedger, addEntry }
