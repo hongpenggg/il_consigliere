@@ -8,24 +8,54 @@ import { GlassPanel } from '@/components/GlassPanel'
 import { IntelCard } from '@/components/IntelCard'
 import { LoyaltyBar } from '@/components/LoyaltyBar'
 import { StatChip } from '@/components/StatChip'
+import type { FamilyMember } from '@/types'
+
+// ── Map FamilyMember loyalty → LoyaltyBar color ───────────────────────────────
+function memberColor(
+  loyalty: number
+): 'primary' | 'secondary' | 'error' | 'tertiary' {
+  if (loyalty >= 75) return 'primary'
+  if (loyalty >= 50) return 'secondary'
+  if (loyalty >= 25) return 'tertiary'
+  return 'error'
+}
+
+function FamilyMemberBar({ member }: { member: FamilyMember }) {
+  const statusLabel =
+    member.status === 'active'
+      ? ''
+      : ` · ${member.status.charAt(0).toUpperCase() + member.status.slice(1)}`
+
+  return (
+    <LoyaltyBar
+      label={`${member.name} — ${member.role}${statusLabel}`}
+      value={member.loyalty}
+      color={memberColor(member.loyalty)}
+      showValue
+    />
+  )
+}
 
 export default function GameScreen() {
   const navigate = useNavigate()
-  const { player, currentEvent, isGenerating, familyMembers, intelReports } = useGameStore()
+  const { player, currentEvent, isGenerating, familyMembers, intelReports } =
+    useGameStore()
   const { generateNarrative, handleChoice } = useAIGenerator()
 
-  // If no player (e.g. navigated directly), send to setup
   useEffect(() => {
     if (!player) {
       navigate('/setup', { replace: true })
     }
   }, [player, navigate])
 
-  // Generate opening narrative on first load
   useEffect(() => {
     if (player && !currentEvent) {
       generateNarrative(
-        `Opening scene. ${player.name} of the ${player.familyName} family begins their rise to power in ${player.territory === 'italy' ? 'Italy, 1947' : 'New York, 1947'}.`,
+        `Opening scene. ${player.name} of the ${
+          player.familyName
+        } family begins their rise to power in ${
+          player.territory === 'italy' ? 'Italy, 1947' : 'New York, 1947'
+        }.`,
         'game_start'
       )
     }
@@ -34,26 +64,49 @@ export default function GameScreen() {
   if (!player) return null
 
   const heatColor =
-    player.heat >= 75 ? 'text-error' : player.heat >= 50 ? 'text-secondary' : 'text-on-surface'
+    player.heat >= 75
+      ? 'text-error'
+      : player.heat >= 50
+      ? 'text-secondary'
+      : 'text-on-surface'
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
-      {/* Top navigation bar */}
       <TopNav />
 
       <div className="flex flex-1 overflow-hidden">
-        {/* Sidebar */}
         <SideNav />
 
-        {/* Main content */}
         <main className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
           {/* Stat chips row */}
-          <div className="flex flex-wrap gap-3">
-            <StatChip label="Wealth" value={`$${(player.wealth / 1_000_000).toFixed(2)}M`} />
-            <StatChip label="Loyalty" value={`${player.loyalty}%`} />
-            <StatChip label="Soldiers" value={String(player.soldiers)} />
-            <StatChip label="Territory" value={`${player.territoryControl}%`} />
-            <StatChip label="Heat" value={`${player.heat}%`} valueClassName={heatColor} />
+          <div className="flex flex-wrap gap-6">
+            <StatChip
+              icon="payments"
+              label="Wealth"
+              value={`$${(player.wealth / 1_000_000).toFixed(2)}M`}
+            />
+            <StatChip
+              icon="handshake"
+              label="Loyalty"
+              value={`${player.loyalty}%`}
+            />
+            <StatChip
+              icon="groups"
+              label="Soldiers"
+              value={String(player.soldiers)}
+            />
+            <StatChip
+              icon="map"
+              label="Territory"
+              value={`${player.territoryControl}%`}
+            />
+            <StatChip
+              icon="local_fire_department"
+              label="Heat"
+              value={`${player.heat}%`}
+              iconColor={heatColor}
+              valueClassName={heatColor}
+            />
           </div>
 
           {/* Narrative panel */}
@@ -120,7 +173,7 @@ export default function GameScreen() {
                 Family Status
               </p>
               {familyMembers.map((member) => (
-                <LoyaltyBar key={member.id} member={member} />
+                <FamilyMemberBar key={member.id} member={member} />
               ))}
             </div>
           )}
