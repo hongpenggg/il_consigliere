@@ -1,7 +1,22 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string | undefined
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined
+
+// Guard: surface a readable error instead of a cryptic white page
+// when the developer hasn't created their .env file yet.
+if (!supabaseUrl || !supabaseAnonKey) {
+  const missing = [
+    !supabaseUrl && 'VITE_SUPABASE_URL',
+    !supabaseAnonKey && 'VITE_SUPABASE_ANON_KEY'
+  ]
+    .filter(Boolean)
+    .join(', ')
+  throw new Error(
+    `Missing Supabase environment variable(s): ${missing}.\n` +
+    'Copy .env.example to .env and fill in your Supabase project credentials.'
+  )
+}
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
