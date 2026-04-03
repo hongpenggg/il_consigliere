@@ -14,6 +14,7 @@ create table if not exists saves (
   slot_name    text not null,
   player_stats jsonb not null,
   chapter      integer not null default 1,
+  play_time    integer not null default 0,   -- seconds of total play time
   created_at   timestamptz not null default now(),
   updated_at   timestamptz not null default now()
 );
@@ -127,8 +128,8 @@ create table if not exists story_events (
   created_at timestamptz not null default now()
 );
 
-create index if not exists story_events_user_id_idx  on story_events(user_id);
-create index if not exists story_events_chapter_idx  on story_events(chapter);
+create index if not exists story_events_user_id_idx   on story_events(user_id);
+create index if not exists story_events_chapter_idx   on story_events(chapter);
 create index if not exists story_events_created_at_idx on story_events(created_at desc);
 
 alter table story_events enable row level security;
@@ -165,3 +166,16 @@ create trigger territories_updated_at
 create trigger family_members_updated_at
   before update on family_members
   for each row execute procedure update_updated_at();
+
+-- ─── Add play_time if upgrading an existing saves table ──────────────────────
+-- Safe to run even if the column already exists (idempotent).
+do $$
+begin
+  if not exists (
+    select 1 from information_schema.columns
+    where table_name = 'saves' and column_name = 'play_time'
+  ) then
+    alter table saves add column play_time integer not null default 0;
+  end if;
+end
+$$;
