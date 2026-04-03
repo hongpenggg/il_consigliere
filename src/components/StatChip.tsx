@@ -1,4 +1,4 @@
-import React from 'react'
+import type { FC } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface StatChipProps {
@@ -9,7 +9,7 @@ export interface StatChipProps {
   valueClassName?: string
 }
 
-export const StatChip: React.FC<StatChipProps> = ({
+export const StatChip: FC<StatChipProps> = ({
   icon,
   label,
   value,

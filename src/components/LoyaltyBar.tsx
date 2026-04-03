@@ -1,4 +1,4 @@
-import React from 'react'
+import type { FC } from 'react'
 import { cn } from '@/lib/utils'
 
 interface LoyaltyBarProps {
@@ -9,12 +9,18 @@ interface LoyaltyBarProps {
   valueLabel?: string
 }
 
-export const LoyaltyBar: React.FC<LoyaltyBarProps> = ({ label, value, color = 'primary', showValue = true, valueLabel }) => {
+export const LoyaltyBar: FC<LoyaltyBarProps> = ({
+  label,
+  value,
+  color = 'primary',
+  showValue = true,
+  valueLabel,
+}) => {
   const colorClass = {
     primary: 'bg-primary',
     secondary: 'bg-secondary',
     error: 'bg-error',
-    tertiary: 'bg-tertiary'
+    tertiary: 'bg-tertiary',
   }[color]
 
   return (
