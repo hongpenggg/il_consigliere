@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
+import { useSupabaseAuth } from '@/hooks/useSupabase'
 import type { PlayerStats } from '@/types'
 
 const AFFILIATIONS = [
@@ -17,8 +18,15 @@ export default function HomeScreen() {
   const [affiliation, setAffiliation] = useState<PlayerStats['affiliation']>('cosa_nostra')
   const [error, setError] = useState('')
 
-  const { setPlayer, player } = useGameStore()
+  const { setPlayer, player, resetGame, userId } = useGameStore()
+  const { signOut } = useSupabaseAuth()
   const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await signOut()
+    resetGame()
+    sessionStorage.removeItem('il_consigliere_player')
+  }
 
   function startGame() {
     if (!name.trim() || !familyName.trim()) {
@@ -138,7 +146,7 @@ export default function HomeScreen() {
               </span>
             </button>
 
-            {!player && (
+            {!userId && (
               <button
                 onClick={() => navigate('/auth')}
                 className="w-full py-3 font-label text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-on-surface transition-colors"
@@ -191,12 +199,22 @@ export default function HomeScreen() {
               <p className="font-label text-[9px] uppercase tracking-widest text-primary/50">Cosa Nostra</p>
             </div>
           </div>
-          <button
-            onClick={() => navigate('/auth')}
-            className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-on-surface transition-colors flex items-center gap-2"
-          >
-            <span className="material-symbols-outlined text-sm">login</span> Sign In
-          </button>
+          {/* Auth button — sign in or sign out depending on state */}
+          {userId ? (
+            <button
+              onClick={() => void handleSignOut()}
+              className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-error transition-colors flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">logout</span> Sign Out
+            </button>
+          ) : (
+            <button
+              onClick={() => navigate('/auth')}
+              className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-on-surface transition-colors flex items-center gap-2"
+            >
+              <span className="material-symbols-outlined text-sm">login</span> Sign In
+            </button>
+          )}
         </header>
 
         {/* Hero */}

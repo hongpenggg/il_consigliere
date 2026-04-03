@@ -1,19 +1,28 @@
 import type { FC } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
+import { useSupabaseAuth } from '@/hooks/useSupabase'
 import { formatLira } from '@/lib/utils'
 
 const NAV_ITEMS = [
-  { path: '/command', icon: 'castle', label: 'Command Center' },
-  { path: '/ledger', icon: 'payments', label: 'Ledger' },
-  { path: '/war-room', icon: 'military_tech', label: 'War Room' },
-  { path: '/dialogue', icon: 'forum', label: 'Intelligence' },
-  { path: '/dialogue', icon: 'gavel', label: 'Diplomacy' },
+  { path: '/command',  icon: 'castle',         label: 'Command Center' },
+  { path: '/ledger',   icon: 'payments',        label: 'Ledger' },
+  { path: '/war-room', icon: 'military_tech',   label: 'War Room' },
+  { path: '/dialogue', icon: 'forum',           label: 'Intelligence' },
+  { path: '/dialogue', icon: 'gavel',           label: 'Diplomacy' },
 ]
 
 export const SideNav: FC = () => {
-  const { player } = useGameStore()
+  const { player, resetGame } = useGameStore()
+  const { signOut } = useSupabaseAuth()
   const navigate = useNavigate()
+
+  async function handleSignOut() {
+    await signOut()
+    resetGame()
+    sessionStorage.removeItem('il_consigliere_player')
+    navigate('/')
+  }
 
   return (
     <aside className="fixed left-0 top-20 h-[calc(100vh-80px)] flex flex-col z-40 bg-[#1c1c1c] w-64 border-r border-[#ffb4ac]/15 shadow-[40px_0_60px_-15px_rgba(0,0,0,0.5)]">
@@ -73,15 +82,21 @@ export const SideNav: FC = () => {
         >
           Expand Territory
         </button>
-        <div className="flex justify-between px-2 mt-2">
-          <span className="material-symbols-outlined text-gray-500 cursor-pointer hover:text-on-surface">
-            settings
-          </span>
+        <div className="flex justify-between items-center px-2 mt-2">
           <button
-            onClick={() => navigate('/')}
-            className="material-symbols-outlined text-gray-500 cursor-pointer hover:text-error"
+            onClick={() => navigate('/auth')}
+            className="flex items-center gap-1 text-gray-500 hover:text-on-surface transition-colors"
+            title="Account settings"
           >
-            logout
+            <span className="material-symbols-outlined text-sm">manage_accounts</span>
+          </button>
+          <button
+            onClick={() => void handleSignOut()}
+            className="flex items-center gap-1 font-label text-[10px] uppercase tracking-widest text-gray-500 hover:text-error transition-colors"
+            title="Sign out"
+          >
+            <span className="material-symbols-outlined text-sm">logout</span>
+            <span>Sign Out</span>
           </button>
         </div>
       </div>

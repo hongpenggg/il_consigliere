@@ -1,9 +1,10 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useSupabaseAuth } from '@/hooks/useSupabase'
 import { SideNav } from '@/components/SideNav'
 import TopBar from '@/components/TopBar'
+import type { PlayerStats } from '@/types'
 
 // ─── Lazy screens ─────────────────────────────────────────────────────────────
 const AuthScreen     = lazy(() => import('@/screens/AuthScreen'))
@@ -15,6 +16,8 @@ const DialogueScreen = lazy(() => import('@/screens/DialogueScreen'))
 const LedgerScreen   = lazy(() => import('@/screens/LedgerScreen'))
 const WarRoomScreen  = lazy(() => import('@/screens/WarRoomScreen'))
 const ConcludeScreen = lazy(() => import('@/screens/ConcludeScreen'))
+
+const SESSION_KEY = 'il_consigliere_player'
 
 // ─── Loading fallback ─────────────────────────────────────────────────────────
 function GameLoader() {
@@ -41,88 +44,118 @@ function GameLayout({ children }: { children: React.ReactNode }) {
   )
 }
 
-// ─── Auth guard (requires player to be set in store) ─────────────────────────
+// ─── Auth guard ───────────────────────────────────────────────────────────────
+// Allows through if player exists in store OR if a session was persisted.
 function RequirePlayer({ children }: { children: React.ReactNode }) {
   const player = useGameStore((s) => s.player)
+  const setPlayer = useGameStore((s) => s.setPlayer)
   const location = useLocation()
+
+  // Attempt to restore from sessionStorage on first render
   if (!player) {
+    try {
+      const saved = sessionStorage.getItem(SESSION_KEY)
+      if (saved) {
+        const parsed = JSON.parse(saved) as PlayerStats
+        setPlayer(parsed)
+        return <>{children}</>
+      }
+    } catch {
+      // ignore corrupt data
+    }
     return <Navigate to="/" state={{ from: location }} replace />
   }
   return <>{children}</>
 }
 
+// ─── Player persistence ───────────────────────────────────────────────────────
+// Keeps sessionStorage in sync whenever player changes.
+function PlayerPersistence() {
+  const player = useGameStore((s) => s.player)
+  useEffect(() => {
+    if (player) {
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(player))
+    } else {
+      sessionStorage.removeItem(SESSION_KEY)
+    }
+  }, [player])
+  return null
+}
+
 // ─── App ──────────────────────────────────────────────────────────────────────
 export default function App() {
-  // Attach Supabase auth listener globally
   useSupabaseAuth()
 
   return (
-    <Suspense fallback={<GameLoader />}>
-      <Routes>
-        {/* Landing */}
-        <Route path="/" element={<HomeScreen />} />
+    <>
+      <PlayerPersistence />
+      <Suspense fallback={<GameLoader />}>
+        <Routes>
+          {/* Landing */}
+          <Route path="/" element={<HomeScreen />} />
 
-        {/* Auth flow */}
-        <Route path="/auth" element={<AuthScreen />} />
+          {/* Auth flow */}
+          <Route path="/auth" element={<AuthScreen />} />
 
-        {/* New-game character setup (requires Supabase auth) */}
-        <Route path="/setup" element={<SetupScreen />} />
+          {/* New-game character setup */}
+          <Route path="/setup" element={<SetupScreen />} />
 
-        {/* Main game hub — full-page layout (no sidebar/topbar) */}
-        <Route
-          path="/game"
-          element={
-            <RequirePlayer>
-              <GameScreen />
-            </RequirePlayer>
-          }
-        />
+          {/* Main game hub */}
+          <Route
+            path="/game"
+            element={
+              <RequirePlayer>
+                <GameScreen />
+              </RequirePlayer>
+            }
+          />
 
-        {/* Protected game sub-screens (sidebar layout) */}
-        <Route
-          path="/command"
-          element={
-            <RequirePlayer>
-              <GameLayout><CommandScreen /></GameLayout>
-            </RequirePlayer>
-          }
-        />
-        <Route
-          path="/dialogue"
-          element={
-            <RequirePlayer>
-              <GameLayout><DialogueScreen /></GameLayout>
-            </RequirePlayer>
-          }
-        />
-        <Route
-          path="/ledger"
-          element={
-            <RequirePlayer>
-              <GameLayout><LedgerScreen /></GameLayout>
-            </RequirePlayer>
-          }
-        />
-        <Route
-          path="/war-room"
-          element={
-            <RequirePlayer>
-              <GameLayout><WarRoomScreen /></GameLayout>
-            </RequirePlayer>
-          }
-        />
-        <Route
-          path="/conclude"
-          element={
-            <RequirePlayer>
-              <ConcludeScreen />
-            </RequirePlayer>
-          }
-        />
+          {/* Protected game sub-screens */}
+          <Route
+            path="/command"
+            element={
+              <RequirePlayer>
+                <GameLayout><CommandScreen /></GameLayout>
+              </RequirePlayer>
+            }
+          />
+          <Route
+            path="/dialogue"
+            element={
+              <RequirePlayer>
+                <GameLayout><DialogueScreen /></GameLayout>
+              </RequirePlayer>
+            }
+          />
+          <Route
+            path="/ledger"
+            element={
+              <RequirePlayer>
+                <GameLayout><LedgerScreen /></GameLayout>
+              </RequirePlayer>
+            }
+          />
+          <Route
+            path="/war-room"
+            element={
+              <RequirePlayer>
+                <GameLayout><WarRoomScreen /></GameLayout>
+              </RequirePlayer>
+            }
+          />
+          <Route
+            path="/conclude"
+            element={
+              <RequirePlayer>
+                <ConcludeScreen />
+              </RequirePlayer>
+            }
+          />
 
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </Suspense>
+          {/* Fallback */}
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </Suspense>
+    </>
   )
 }

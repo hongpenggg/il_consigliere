@@ -3,6 +3,10 @@
 @tailwind utilities;
 
 @layer base {
+  html {
+    zoom: 0.9;
+  }
+
   html, body {
     @apply bg-background text-on-surface font-body;
     overflow: hidden;

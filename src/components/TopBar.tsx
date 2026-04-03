@@ -1,10 +1,15 @@
+import { useState, useRef, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
+import { useSupabaseAuth } from '@/hooks/useSupabase'
 import { formatLira } from '@/lib/utils'
 
 export default function TopBar() {
-  const { player, notificationsOpen, setNotificationsOpen, intelReports } = useGameStore()
+  const { player, notificationsOpen, setNotificationsOpen, intelReports, resetGame, userId } = useGameStore()
+  const { signOut } = useSupabaseAuth()
   const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   const criticalCount = intelReports.filter(
     (r) => r.severity === 'critical' || r.severity === 'high'
@@ -16,6 +21,25 @@ export default function TopBar() {
       : (player?.heat ?? 0) >= 50
       ? 'text-[#ffb4ac]'
       : 'text-secondary'
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  async function handleSignOut() {
+    setMenuOpen(false)
+    await signOut()
+    resetGame()
+    sessionStorage.removeItem('il_consigliere_player')
+    navigate('/')
+  }
 
   return (
     <header className="fixed top-0 left-0 right-0 h-20 z-50 bg-[#131313]/90 backdrop-blur-md border-b border-[#ffb4ac]/10 flex items-center justify-between px-6">
@@ -66,11 +90,49 @@ export default function TopBar() {
           )}
         </button>
 
-        {/* Player name */}
+        {/* Player menu */}
         {player && (
-          <div className="hidden sm:flex items-center gap-2 px-3 py-2 border border-primary/10 bg-surface-container-low">
-            <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
-            <span className="font-label text-xs text-on-surface-variant">{player.name}</span>
+          <div className="relative" ref={menuRef}>
+            <button
+              onClick={() => setMenuOpen((o) => !o)}
+              className="flex items-center gap-2 px-3 py-2 border border-primary/10 bg-surface-container-low hover:border-primary/30 transition-colors"
+            >
+              <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+              <span className="hidden sm:block font-label text-xs text-on-surface-variant">{player.name}</span>
+              <span className="material-symbols-outlined text-on-surface/30 text-sm">
+                {menuOpen ? 'expand_less' : 'expand_more'}
+              </span>
+            </button>
+
+            {/* Dropdown */}
+            {menuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-48 bg-[#1c1c1c] border border-[#ffb4ac]/15 shadow-lg z-50">
+                {/* User info */}
+                <div className="px-4 py-3 border-b border-[#ffb4ac]/10">
+                  <p className="font-label text-[10px] uppercase tracking-widest text-on-surface/60">Signed in as</p>
+                  <p className="font-label text-xs text-on-surface mt-0.5 truncate">
+                    {userId ? 'Authenticated' : 'Guest Session'}
+                  </p>
+                </div>
+                {/* Auth actions */}
+                {!userId && (
+                  <button
+                    onClick={() => { setMenuOpen(false); navigate('/auth') }}
+                    className="w-full flex items-center gap-3 px-4 py-3 font-label text-xs text-on-surface hover:bg-surface-container transition-colors text-left"
+                  >
+                    <span className="material-symbols-outlined text-sm">login</span>
+                    Sign In to Save
+                  </button>
+                )}
+                <button
+                  onClick={() => void handleSignOut()}
+                  className="w-full flex items-center gap-3 px-4 py-3 font-label text-xs text-error hover:bg-error/10 transition-colors text-left"
+                >
+                  <span className="material-symbols-outlined text-sm">logout</span>
+                  Sign Out
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
