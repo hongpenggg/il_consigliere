@@ -2,7 +2,7 @@
 // Interactive tutorial — mirrors the Python game's Chapters 0–3.
 // Each chapter presents narrative text, choices, and mini-tasks.
 
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 
