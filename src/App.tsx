@@ -6,12 +6,14 @@ import { SideNav } from '@/components/SideNav'
 import TopBar from '@/components/TopBar'
 
 // ─── Lazy screens ─────────────────────────────────────────────────────────────
-const AuthScreen    = lazy(() => import('@/screens/AuthScreen'))
-const HomeScreen    = lazy(() => import('@/screens/HomeScreen'))
-const CommandScreen = lazy(() => import('@/screens/CommandScreen'))
+const AuthScreen     = lazy(() => import('@/screens/AuthScreen'))
+const HomeScreen     = lazy(() => import('@/screens/HomeScreen'))
+const SetupScreen    = lazy(() => import('@/screens/SetupScreen'))
+const GameScreen     = lazy(() => import('@/screens/GameScreen'))
+const CommandScreen  = lazy(() => import('@/screens/CommandScreen'))
 const DialogueScreen = lazy(() => import('@/screens/DialogueScreen'))
-const LedgerScreen  = lazy(() => import('@/screens/LedgerScreen'))
-const WarRoomScreen = lazy(() => import('@/screens/WarRoomScreen'))
+const LedgerScreen   = lazy(() => import('@/screens/LedgerScreen'))
+const WarRoomScreen  = lazy(() => import('@/screens/WarRoomScreen'))
 const ConcludeScreen = lazy(() => import('@/screens/ConcludeScreen'))
 
 // ─── Loading fallback ─────────────────────────────────────────────────────────
@@ -39,7 +41,7 @@ function GameLayout({ children }: { children: React.ReactNode }) {
   )
 }
 
-// ─── Auth guard ───────────────────────────────────────────────────────────────
+// ─── Auth guard (requires player to be set in store) ─────────────────────────
 function RequirePlayer({ children }: { children: React.ReactNode }) {
   const player = useGameStore((s) => s.player)
   const location = useLocation()
@@ -57,13 +59,26 @@ export default function App() {
   return (
     <Suspense fallback={<GameLoader />}>
       <Routes>
-        {/* Landing / setup */}
+        {/* Landing */}
         <Route path="/" element={<HomeScreen />} />
 
         {/* Auth flow */}
         <Route path="/auth" element={<AuthScreen />} />
 
-        {/* Protected game screens */}
+        {/* New-game character setup (requires Supabase auth) */}
+        <Route path="/setup" element={<SetupScreen />} />
+
+        {/* Main game hub — full-page layout (no sidebar/topbar) */}
+        <Route
+          path="/game"
+          element={
+            <RequirePlayer>
+              <GameScreen />
+            </RequirePlayer>
+          }
+        />
+
+        {/* Protected game sub-screens (sidebar layout) */}
         <Route
           path="/command"
           element={
