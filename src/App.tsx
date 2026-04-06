@@ -82,6 +82,36 @@ function PlayerPersistence() {
   return null
 }
 
+// ─── Player persistence (Supabase autosave for authenticated users) ───────────
+function SupabaseInstancePersistence() {
+  const userId = useGameStore((s) => s.userId)
+  const player = useGameStore((s) => s.player)
+  const { saveInstance } = useGameInstance()
+  const lastSaved = useRef<string | null>(null)
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  useEffect(() => {
+    if (!userId || !player) return
+    const serialized = JSON.stringify(player)
+    if (lastSaved.current === serialized) return
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      lastSaved.current = serialized
+      void saveInstance(player)
+    }, 2000)
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current)
+      }
+    }
+  }, [userId, player, saveInstance])
+
+  return null
+}
+
 // ─── Instance restore on login ────────────────────────────────────────────────
 function InstanceRestorer() {
   const userId             = useGameStore((s) => s.userId)
@@ -111,6 +141,7 @@ export default function App() {
   return (
     <>
       <PlayerPersistence />
+      <SupabaseInstancePersistence />
       <InstanceRestorer />
       <Suspense fallback={<GameLoader />}>
         <Routes>
