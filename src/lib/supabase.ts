@@ -27,10 +27,19 @@ export type Database = {
         Row: {
           id: string
           user_id: string
-          player_stats: Record<string, unknown>
-          chapter: number
+          current_chapter: number
+          total_play_time: number
+          last_active: string
+          tutorial_completed: boolean
+          tutorial_phase: string
+          story_mode_started: boolean
+          story_chapter: number
+          story_step: number
+          story_path: string[]
+          story_ending: string | null
+          story_world: Record<string, unknown> | null
+          resource_snapshot: Record<string, unknown> | null
           created_at: string
-          updated_at: string
         }
       }
       saves: {
@@ -80,6 +89,17 @@ export type Database = {
           content: string
           choices: Record<string, unknown>[]
           chapter: number
+          created_at: string
+        }
+      }
+      game_instances: {
+        Row: {
+          id: string
+          user_id: string
+          player_stats: Record<string, unknown>
+          status: 'active' | 'concluded'
+          progress_snapshot: Record<string, unknown> | null
+          updated_at: string
           created_at: string
         }
       }

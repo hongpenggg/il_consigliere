@@ -1,235 +1,289 @@
-import { useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useMemo } from 'react'
 import { useGameStore } from '@/store/gameStore'
-import { useAIGenerator } from '@/hooks/useAIGenerator'
-import { useGameState } from '@/hooks/useGameState'
-import { GlassPanel } from '@/components/GlassPanel'
-import { formatLira } from '@/lib/utils'
+import { useUserProgress } from '@/hooks/useSupabase'
+import { getStoryChapter } from '@/data/storyModeChapters'
+import type { PlayerStats, StoryChoiceOption, StoryFactionState, StoryResourceState, StoryPhilosophyState, StoryWorldState } from '@/types'
 
-// ─── Severity dot colour ──────────────────────────────────────────────────────
-function severityClass(s: string) {
-  if (s === 'critical') return 'bg-error'
-  if (s === 'high') return 'bg-[#ffb4ac]'
-  if (s === 'medium') return 'bg-secondary'
-  return 'bg-on-surface/30'
+function clamp(min: number, value: number, max: number) {
+  return Math.max(min, Math.min(max, value))
+}
+
+function applyPlayerDelta(player: PlayerStats | null, delta?: Partial<PlayerStats>) {
+  if (!player || !delta) return player
+  return {
+    ...player,
+    ...delta,
+    heat: clamp(0, delta.heat ?? player.heat, 100),
+    loyalty: clamp(0, delta.loyalty ?? player.loyalty, 100),
+    suspicion: clamp(0, delta.suspicion ?? player.suspicion, 100),
+    territoryControl: clamp(0, delta.territoryControl ?? player.territoryControl, 100),
+    soldiers: Math.max(0, delta.soldiers ?? player.soldiers),
+  }
+}
+
+function applyFactionDelta(current: StoryFactionState, delta?: Partial<StoryFactionState>): StoryFactionState {
+  if (!delta) return current
+  return {
+    familyLoyalty: clamp(0, current.familyLoyalty + (delta.familyLoyalty ?? 0), 100),
+    donTrust: clamp(0, current.donTrust + (delta.donTrust ?? 0), 100),
+    rivalTension: clamp(0, current.rivalTension + (delta.rivalTension ?? 0), 100),
+    rivalRespect: clamp(0, current.rivalRespect + (delta.rivalRespect ?? 0), 100),
+    commissionStanding: clamp(0, current.commissionStanding + (delta.commissionStanding ?? 0), 100),
+    cityHallInfluence: clamp(0, current.cityHallInfluence + (delta.cityHallInfluence ?? 0), 100),
+    cityHallExposure: clamp(0, current.cityHallExposure + (delta.cityHallExposure ?? 0), 100),
+    lawHeat: clamp(0, current.lawHeat + (delta.lawHeat ?? 0), 100),
+    notoriety: clamp(0, current.notoriety + (delta.notoriety ?? 0), 100),
+    streetFear: clamp(0, current.streetFear + (delta.streetFear ?? 0), 100),
+    streetGoodwill: clamp(0, current.streetGoodwill + (delta.streetGoodwill ?? 0), 100),
+  }
+}
+
+function applyResourceDelta(current: StoryResourceState, delta?: Partial<Omit<StoryResourceState, 'favorsOwed' | 'favorsHeld'>>) {
+  if (!delta) return current
+  return {
+    ...current,
+    cash: current.cash + (delta.cash ?? 0),
+    racketsActive: Math.max(0, current.racketsActive + (delta.racketsActive ?? 0)),
+    racketsCompromised: Math.max(0, current.racketsCompromised + (delta.racketsCompromised ?? 0)),
+    soldiersAvailable: Math.max(0, current.soldiersAvailable + (delta.soldiersAvailable ?? 0)),
+    soldiersUnavailable: Math.max(0, current.soldiersUnavailable + (delta.soldiersUnavailable ?? 0)),
+  }
+}
+
+function applyPhilosophyDelta(current: StoryPhilosophyState, delta?: Partial<StoryPhilosophyState>) {
+  if (!delta) return current
+  return {
+    oldCodeVsNewBlood: clamp(-5, current.oldCodeVsNewBlood + (delta.oldCodeVsNewBlood ?? 0), 5),
+    violenceVsPolitics: clamp(-5, current.violenceVsPolitics + (delta.violenceVsPolitics ?? 0), 5),
+    familyFirstVsEmpireFirst: clamp(-5, current.familyFirstVsEmpireFirst + (delta.familyFirstVsEmpireFirst ?? 0), 5),
+    honorVsPragmatism: clamp(-5, current.honorVsPragmatism + (delta.honorVsPragmatism ?? 0), 5),
+  }
+}
+
+function mergeWorld(world: StoryWorldState, choice: StoryChoiceOption) {
+  const d = choice.delta
+  const favorsOwed = world.resources.favorsOwed
+    .filter((f) => !(d.resolveFavorsOwed ?? []).includes(f))
+    .concat(d.addFavorsOwed ?? [])
+  const favorsHeld = world.resources.favorsHeld
+    .filter((f) => !(d.spendFavorsHeld ?? []).includes(f))
+    .concat(d.addFavorsHeld ?? [])
+
+  return {
+    ...world,
+    factions: applyFactionDelta(world.factions, d.factions),
+    resources: {
+      ...applyResourceDelta(world.resources, d.resources),
+      favorsOwed,
+      favorsHeld,
+    },
+    philosophy: applyPhilosophyDelta(world.philosophy, d.philosophy),
+  }
+}
+
+function worldFromPlayerTerritory(territory: string | undefined, playerId?: string): Pick<StoryWorldState, 'world' | 'city'> {
+  const mapping: Record<string, Pick<StoryWorldState, 'world' | 'city'>> = {
+    italy: { world: 'Italy', city: 'Sicily' },
+    usa: { world: 'USA', city: 'New York' },
+    uk: { world: 'UK', city: 'London' },
+  }
+  const resolved = territory ? mapping[territory] : undefined
+  void playerId
+  return resolved ?? mapping.italy
+}
+
+function meter(value: number) {
+  return (
+    <div className="h-1.5 bg-surface-container-high rounded-full overflow-hidden">
+      <div className="h-full bg-primary transition-all" style={{ width: `${value}%` }} />
+    </div>
+  )
 }
 
 export default function CommandScreen() {
   const {
     player,
-    currentEvent,
-    isGenerating,
-    narrativeHistory,
-    intelReports,
-    familyMembers,
-    territories,
+    setPlayer,
+    storyModeStarted,
+    startStoryMode,
+    storyChapter,
+    storyStep,
+    storyPath,
+    storyEnding,
+    storyWorld,
+    setStoryWorld,
+    advanceStory,
   } = useGameStore()
+  const { trackStoryStep } = useUserProgress()
 
-  const { generateNarrative, handleChoice } = useAIGenerator()
-  const { applyChoiceEffects, getHeatColor } = useGameState()
-  const navigate = useNavigate()
+  const chapter = useMemo(() => getStoryChapter(storyChapter), [storyChapter])
+  const world = useMemo<StoryWorldState>(() => {
+    if (storyModeStarted) return storyWorld
+    const inferred = worldFromPlayerTerritory(player?.territory, player?.id)
+    return { ...storyWorld, ...inferred }
+  }, [storyModeStarted, storyWorld, player?.territory])
 
-  // Generate opening event if none exists
-  useEffect(() => {
-    if (!currentEvent && !isGenerating) {
-      generateNarrative(
-        `The ${player?.familyName ?? 'Corleone'} family begins a new operation. ${
-          player?.name ?? 'Don'
-        } surveys the city from their stronghold.`,
-        'session_start'
-      )
-    }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  const handleStart = () => {
+    startStoryMode()
+    setStoryWorld({ ...world })
+  }
 
-  const playerTerritories = territories.filter((t) => t.controller === 'Player')
-  const weeklyIncome = playerTerritories.reduce((sum, t) => sum + t.weeklyIncome, 0)
+  const handleChoice = (choice: StoryChoiceOption) => {
+    const nextWorld = mergeWorld(world, choice)
+    const nextPlayer = applyPlayerDelta(player, choice.delta.player)
+    setStoryWorld(nextWorld)
+    if (nextPlayer) setPlayer(nextPlayer)
+    advanceStory(choice.id, choice.nextChapter, choice.ending ?? null)
+    void trackStoryStep({
+      chapter: chapter.chapter,
+      content: chapter.body.join('\n\n'),
+      choiceId: choice.id,
+      choiceText: choice.text,
+      choiceLabel: choice.likelyEffect,
+      nextChapter: choice.nextChapter,
+      ending: choice.ending ?? null,
+      playerAfterStep: nextPlayer,
+      worldAfterStep: nextWorld,
+      storyPathAfterStep: [...storyPath, choice.id],
+      storyStepAfterStep: storyStep + 1,
+    })
+  }
+
+  const completedStory = storyChapter === 20 && !!storyEnding && storyStep > 0
 
   return (
     <div className="space-y-6">
-      {/* Page header */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/60">Command Center</p>
-          <h1 className="font-headline text-3xl italic text-on-surface">
-            {player?.familyName} Family Operations
-          </h1>
+          <p className="font-label text-[10px] uppercase tracking-[0.35em] text-primary/60">Command Centre — Story Mode</p>
+          <h1 className="font-headline text-3xl italic text-on-surface">Il Consigliere: {world.world}, {world.year}</h1>
+          <p className="font-body text-sm text-on-surface/60 mt-2">Season: {world.season} · Session Week {chapter.week} · Chapter {chapter.chapter}/20</p>
         </div>
-        <button
-          onClick={() => navigate('/conclude')}
-          className="font-label text-[10px] uppercase tracking-widest text-on-surface/30 hover:text-error transition-colors border border-outline-variant/20 px-4 py-2 hover:border-error/40"
-        >
-          End Campaign
-        </button>
       </div>
 
-      {/* KPI row */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <KpiCard label="Heat Level" value={`${player?.heat ?? 0}%`} valueClass={getHeatColor()} icon="local_fire_department" />
-        <KpiCard label="Family Loyalty" value={`${player?.loyalty ?? 0}%`} valueClass="text-secondary" icon="favorite" />
-        <KpiCard label="Territory" value={`${player?.territoryControl ?? 0}%`} valueClass="text-on-surface" icon="map" />
-        <KpiCard label="Weekly Income" value={formatLira(weeklyIncome)} valueClass="text-secondary" icon="payments" />
-      </div>
+      {!storyModeStarted && (
+        <div className="bg-surface-container-low border border-outline-variant/20 p-5 space-y-3">
+          <p className="font-body text-sm text-on-surface/80">
+            Autumn, 1947. The Don is diminished. The Commission votes in three weeks. The docks are contested.
+            A federal grand jury is active. The heir is reckless. You are the consigliere.
+          </p>
+          <button
+            onClick={handleStart}
+            className="px-5 py-3 bg-primary-container border-l-4 border-primary font-label text-[10px] uppercase tracking-widest text-on-primary-container"
+          >
+            Begin Session One
+          </button>
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-        {/* ── Narrative panel (2/3 width) ── */}
-        <div className="xl:col-span-2 space-y-4">
-          <GlassPanel border="left" className="p-6">
-            <div className="flex items-center justify-between mb-5">
-              <p className="font-label text-[10px] uppercase tracking-[0.3em] text-primary/60">Incoming Intelligence</p>
-              {isGenerating && (
-                <span className="flex items-center gap-2 font-label text-[10px] uppercase tracking-widest text-on-surface/40 animate-pulse">
-                  <span className="w-2 h-2 bg-primary rounded-full animate-ping" />
-                  Generating...
-                </span>
-              )}
-            </div>
-
-            {/* Narrative text */}
-            <div className="mb-6 min-h-[100px]">
-              {isGenerating && !currentEvent ? (
-                <div className="space-y-3">
-                  <div className="h-4 bg-surface-container-high rounded animate-pulse w-full" />
-                  <div className="h-4 bg-surface-container-high rounded animate-pulse w-5/6" />
-                  <div className="h-4 bg-surface-container-high rounded animate-pulse w-4/6" />
+      {storyModeStarted && (
+        <>
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+            <div className="xl:col-span-2 space-y-4">
+              <section className="bg-surface-container-low border border-outline-variant/20 p-5 space-y-4">
+                <p className="font-label text-[10px] uppercase tracking-[0.25em] text-primary/70">The Brief</p>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                  <div>
+                    <p className="font-label text-[10px] uppercase tracking-widest text-secondary mb-2">Known</p>
+                    <ul className="space-y-1 text-on-surface/80">{chapter.brief.known.map((i) => <li key={i}>• {i}</li>)}</ul>
+                  </div>
+                  <div>
+                    <p className="font-label text-[10px] uppercase tracking-widest text-primary mb-2">Suspect</p>
+                    <ul className="space-y-1 text-on-surface/80">{chapter.brief.suspect.map((i) => <li key={i}>• {i}</li>)}</ul>
+                  </div>
+                  <div>
+                    <p className="font-label text-[10px] uppercase tracking-widest text-error mb-2">Unknown</p>
+                    <ul className="space-y-1 text-on-surface/80">{chapter.brief.unknown.map((i) => <li key={i}>• {i}</li>)}</ul>
+                  </div>
                 </div>
-              ) : (
-                <p className="font-body text-on-surface-variant leading-[1.9] text-base">
-                  {currentEvent?.content ?? 'Awaiting your orders...'}
-                </p>
-              )}
-            </div>
+              </section>
 
-            {/* Choices */}
-            {currentEvent && !isGenerating && (
-              <div className="space-y-3">
-                <p className="font-label text-[9px] uppercase tracking-[0.3em] text-on-surface/30 mb-4">Your Move</p>
-                {currentEvent.choices.map((choice) => (
-                  <button
-                    key={choice.id}
-                    onClick={() => {
-                      applyChoiceEffects(choice.label)
-                      handleChoice(choice, currentEvent)
-                    }}
-                    className="w-full group flex items-start justify-between gap-4 px-5 py-4 bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 hover:bg-primary-container/30 transition-all text-left active:scale-[0.99]"
-                  >
-                    <div className="flex-1">
-                      <p className="font-body text-sm text-on-surface group-hover:text-on-surface transition-colors leading-snug">
-                        {choice.text}
-                      </p>
-                      {choice.label && (
-                        <p className="font-label text-[10px] text-on-surface/30 mt-1.5 uppercase tracking-wide">
-                          {choice.label}
-                        </p>
-                      )}
+              <section className="bg-surface-container-low border border-outline-variant/20 p-5 space-y-4">
+                <div className="text-xs text-on-surface/70 space-y-1">
+                  <p><span className="text-on-surface">Location:</span> {chapter.sceneHeader.location}</p>
+                  <p><span className="text-on-surface">Present:</span> {chapter.sceneHeader.present.join(' · ')}</p>
+                  <p><span className="text-on-surface">Stakes:</span> {chapter.sceneHeader.stakes}</p>
+                  <p><span className="text-on-surface">Your leverage:</span> {chapter.sceneHeader.leverage}</p>
+                </div>
+                <div className="space-y-3 text-sm text-on-surface/80 leading-relaxed">
+                  {chapter.body.map((p) => <p key={p}>{p}</p>)}
+                </div>
+              </section>
+
+              <section className="bg-surface-container-low border border-outline-variant/20 p-5 space-y-4">
+                <p className="font-label text-[10px] uppercase tracking-[0.25em] text-primary/70">Dialogue Node</p>
+                <p className="font-body text-sm text-on-surface"><span className="font-bold">{chapter.npcName}</span> says: “{chapter.npcDialogue}”</p>
+                {!completedStory ? (
+                  <div className="space-y-3">
+                    {chapter.options.map((o) => (
+                      <button
+                        key={o.id}
+                        onClick={() => handleChoice(o)}
+                        className="w-full text-left p-4 bg-background/40 border border-outline-variant/20 hover:border-primary/40 hover:bg-primary-container/20 transition-all"
+                      >
+                        <p className="font-label text-[10px] uppercase tracking-wider text-primary/80 mb-1">{o.id}) {o.text}</p>
+                        <p className="text-xs text-on-surface/60">→ Likely effect: {o.likelyEffect}</p>
+                      </button>
+                    ))}
+                    <div className="p-3 border border-outline-variant/15 bg-background/30">
+                      <p className="text-xs text-on-surface/60">E) Custom action — describe your approach (UI placeholder for free-text custom action).</p>
                     </div>
-                    <span className="material-symbols-outlined text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all mt-0.5 text-lg flex-shrink-0">
-                      arrow_forward
-                    </span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </GlassPanel>
+                  </div>
+                ) : (
+                  <div className="p-4 border border-primary/30 bg-primary-container/25">
+                    <p className="font-label text-[10px] uppercase tracking-widest text-primary">Ending Reached</p>
+                    <p className="font-body text-sm text-on-surface mt-2">{storyEnding}</p>
+                  </div>
+                )}
+              </section>
+            </div>
 
-          {/* History */}
-          {narrativeHistory.length > 0 && (
-            <GlassPanel className="p-5">
-              <p className="font-label text-[10px] uppercase tracking-[0.3em] text-on-surface/30 mb-4">Recent History</p>
-              <div className="space-y-3 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                {[...narrativeHistory].reverse().slice(0, 5).map((evt) => (
-                  <div key={evt.id} className="border-l-2 border-outline-variant/20 pl-4">
-                    <p className="font-body text-xs text-on-surface/50 leading-relaxed line-clamp-2">
-                      {evt.content}
-                    </p>
+            <div className="space-y-4">
+              <section className="bg-surface-container-low border border-outline-variant/20 p-4 space-y-3">
+                <p className="font-label text-[10px] uppercase tracking-[0.25em] text-primary/70">Faction Relationships</p>
+                {[
+                  ['Your Family — Loyalty', world.factions.familyLoyalty],
+                  ['Your Family — Don Trust', world.factions.donTrust],
+                  ['Rival — Tension', world.factions.rivalTension],
+                  ['Rival — Respect', world.factions.rivalRespect],
+                  ['Commission — Standing', world.factions.commissionStanding],
+                  ['City Hall — Influence', world.factions.cityHallInfluence],
+                  ['City Hall — Exposure', world.factions.cityHallExposure],
+                  ['NYPD/FBI — Heat', world.factions.lawHeat],
+                  ['Press/Public — Notoriety', world.factions.notoriety],
+                  ['Street — Fear', world.factions.streetFear],
+                  ['Street — Goodwill', world.factions.streetGoodwill],
+                ].map(([label, val]) => (
+                  <div key={label as string} className="space-y-1">
+                    <div className="flex justify-between text-[11px] text-on-surface/70"><span>{label}</span><span>{val}</span></div>
+                    {meter(Number(val))}
                   </div>
                 ))}
-              </div>
-            </GlassPanel>
-          )}
-        </div>
+              </section>
 
-        {/* ── Right sidebar ── */}
-        <div className="space-y-4">
-          {/* Intel */}
-          <GlassPanel className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <p className="font-label text-[10px] uppercase tracking-[0.3em] text-on-surface/40">Intel Feed</p>
-              <button onClick={() => navigate('/dialogue')} className="font-label text-[9px] uppercase tracking-widest text-primary/60 hover:text-primary transition-colors">
-                View All
-              </button>
-            </div>
-            <div className="space-y-3">
-              {intelReports.slice(0, 3).map((r) => (
-                <div key={r.id} className="flex items-start gap-3">
-                  <div className={`w-2 h-2 rounded-full mt-1.5 flex-shrink-0 ${severityClass(r.severity)}`} />
-                  <div>
-                    <p className="font-label text-xs font-bold text-on-surface">{r.title}</p>
-                    <p className="font-body text-[11px] text-on-surface/50 leading-snug mt-0.5">
-                      {r.description}
-                    </p>
-                  </div>
+              <section className="bg-surface-container-low border border-outline-variant/20 p-4 space-y-2">
+                <p className="font-label text-[10px] uppercase tracking-[0.25em] text-primary/70">Resources</p>
+                <p className="text-xs text-on-surface/70">Cash: ${world.resources.cash.toLocaleString()}</p>
+                <p className="text-xs text-on-surface/70">Operations: {world.resources.racketsActive} active / {world.resources.racketsCompromised} compromised</p>
+                <p className="text-xs text-on-surface/70">Men: {world.resources.soldiersAvailable} available / {world.resources.soldiersUnavailable} unavailable</p>
+                <p className="text-xs text-on-surface/70">Favors Owed: {world.resources.favorsOwed.join(' · ') || 'None'}</p>
+                <p className="text-xs text-on-surface/70">Favors Held: {world.resources.favorsHeld.join(' · ') || 'None'}</p>
+              </section>
+
+              <section className="bg-surface-container-low border border-outline-variant/20 p-4 space-y-2">
+                <p className="font-label text-[10px] uppercase tracking-[0.25em] text-primary/70">Consigliere Philosophy</p>
+                <p className="text-xs text-on-surface/70">Old Code ↔ New Blood: {world.philosophy.oldCodeVsNewBlood}</p>
+                <p className="text-xs text-on-surface/70">Violence ↔ Politics: {world.philosophy.violenceVsPolitics}</p>
+                <p className="text-xs text-on-surface/70">Family First ↔ Empire First: {world.philosophy.familyFirstVsEmpireFirst}</p>
+                <p className="text-xs text-on-surface/70">Honor ↔ Pragmatism: {world.philosophy.honorVsPragmatism}</p>
+                <div className="pt-2 border-t border-outline-variant/15">
+                  <p className="text-xs text-on-surface/60">Delayed thread: {chapter.delayedThread}</p>
                 </div>
-              ))}
+              </section>
             </div>
-          </GlassPanel>
-
-          {/* Family */}
-          <GlassPanel className="p-5">
-            <div className="flex items-center justify-between mb-4">
-              <p className="font-label text-[10px] uppercase tracking-[0.3em] text-on-surface/40">Family Status</p>
-            </div>
-            <div className="space-y-3">
-              {familyMembers.map((m) => (
-                <div key={m.id} className="flex items-center justify-between">
-                  <div>
-                    <p className="font-label text-xs text-on-surface">{m.name}</p>
-                    <p className="font-label text-[10px] text-on-surface/40 uppercase">{m.role}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className={`font-label text-sm font-bold tabular-nums ${
-                      m.loyalty >= 80 ? 'text-secondary' : m.loyalty >= 50 ? 'text-on-surface' : 'text-error'
-                    }`}>{m.loyalty}%</p>
-                    <p className="font-label text-[9px] text-on-surface/30 uppercase">Loyalty</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </GlassPanel>
-
-          {/* Quick actions */}
-          <GlassPanel className="p-5">
-            <p className="font-label text-[10px] uppercase tracking-[0.3em] text-on-surface/40 mb-3">Quick Actions</p>
-            <div className="space-y-2">
-              {[
-                { label: 'View Ledger', icon: 'payments', path: '/ledger' },
-                { label: 'War Room', icon: 'military_tech', path: '/war-room' },
-                { label: 'Intelligence', icon: 'forum', path: '/dialogue' },
-              ].map((a) => (
-                <button
-                  key={a.path}
-                  onClick={() => navigate(a.path)}
-                  className="w-full flex items-center gap-3 px-4 py-3 bg-surface-container-low hover:bg-surface-container border border-outline-variant/10 hover:border-outline-variant/30 transition-all group"
-                >
-                  <span className="material-symbols-outlined text-on-surface/40 group-hover:text-primary transition-colors text-sm">{a.icon}</span>
-                  <span className="font-label text-[10px] uppercase tracking-widest text-on-surface/60 group-hover:text-on-surface transition-colors">{a.label}</span>
-                </button>
-              ))}
-            </div>
-          </GlassPanel>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function KpiCard({ label, value, valueClass, icon }: { label: string; value: string; valueClass: string; icon: string }) {
-  return (
-    <div className="bg-surface-container-low border border-outline-variant/15 p-5 flex items-start justify-between">
-      <div>
-        <p className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 mb-2">{label}</p>
-        <p className={`font-label text-2xl font-bold tabular-nums ${valueClass}`}>{value}</p>
-      </div>
-      <span className="material-symbols-outlined text-on-surface/20 text-2xl">{icon}</span>
+          </div>
+        </>
+      )}
     </div>
   )
 }
