@@ -56,16 +56,21 @@ class World:
     if self.country == "Italy":
       print("")
       print("Pick a powerful family to side with: ")
-      print("1. Famiglia del Brenta, in Veneto.")
-      print("2. Banda della Comasina, in Lombardy.")
-      print("3. Banda della Magliana, in Lazio.")
-      print("4. Famiglia Cosentino, in Basilicata.")
-      print("5. Sacra Corona Unita, in Apuila.")
-      print("6. La Ndrangheta, in Calabria.")
-      print("7. La Camorra, in Campania.")
-      print("8. La Cosa Nostra, in Sicily.")
-      print("9. Stidda, in Sicily.")
-      print("10. Mala del Brenta, in Veneto.")
+      italy_regions = {
+          "Famiglia del Brenta": "Veneto",
+          "Banda della Comasina": "Lombardy",
+          "Banda della Magliana": "Lazio",
+          "Famiglia Cosentino": "Basilicata",
+          "Sacra Corona Unita": "Apulia",
+          "La Ndrangheta": "Calabria",
+          "La Camorra": "Campania",
+          "La Cosa Nostra": "Sicily",
+          "Stidda": "Sicily",
+          "Mala del Brenta": "Veneto",
+      }
+      for idx, fam in enumerate(families["Italy"], start=1):
+        region = italy_regions.get(fam, "Italy")
+        print(f"{idx}. {fam}, in {region}.")
 
       pick = int(input("Your family: "))
       self.family = families["Italy"][pick-1]
@@ -74,16 +79,21 @@ class World:
     elif self.country == "US":
       print("")
       print("Pick a powerful family to side with: ")
-      print("1. Famiglia Gambino, in New York.")
-      print("2. Famiglia Lucchese, in New York.")
-      print("3. Famiglia Genovese, in New York.")
-      print("4. Famiglia Bonanno, in New York.")
-      print("5. Famiglia Colombo, in New York.")
-      print("6. Chicago Outfit, in Chicago.")
-      print("7. Philadelphia Crime Family, in Philadelphia.")
-      print("8. Buffalo Crime Family, in Buffalo.")
-      print("9. Patriarca Crime Family, in New England.")
-      print("10. DeCavalcante Crime Family, in New Jersey.")
+      us_regions = {
+          "Famiglia Gambino": "New York",
+          "Famiglia Lucchese": "New York",
+          "Famiglia Genovese": "New York",
+          "Famiglia Bonanno": "New York",
+          "Famiglia Colombo": "New York",
+          "Chicago Outfit": "Chicago",
+          "Philadelphia Crime Family": "Philadelphia",
+          "Buffalo Crime Family": "Buffalo",
+          "Patriarca Crime Family": "New England",
+          "DeCavalcante Crime Family": "New Jersey",
+      }
+      for idx, fam in enumerate(families["US"], start=1):
+        region = us_regions.get(fam, "United States")
+        print(f"{idx}. {fam}, in {region}.")
 
       pick = int(input("Your family: "))
       self.family = families["US"][pick-1]

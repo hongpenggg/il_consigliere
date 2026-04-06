@@ -862,7 +862,7 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={1} title="Intro to the Game" />
           <NarrativeBox lines={[
-            `BREAKING NEWS: Palermo wakes to sirens and whispers. Lorenzo Bianchi, long-time consigliere of the ${family}, is dead.`,
+            `BREAKING NEWS: Palermo wakes to sirens and whispers. Lorenzo Bianchi, longtime consigliere of the ${family}, is dead.`,
             'Official statement: terminal cancer. Public funeral: tomorrow at dawn.',
             `Unofficial whispers from the docks and backrooms say otherwise — poison, betrayal, and a council vote made in fear.`,
             `Before sunrise, captains receive sealed orders: ${name} is to assume command immediately as the new strategist of the family.`,

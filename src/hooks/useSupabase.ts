@@ -48,7 +48,7 @@ export function useGameInstance() {
   /** Write (or overwrite) the current player snapshot to Supabase. */
   const saveInstance = useCallback(async (stats: PlayerStats) => {
     if (!userId) return
-    await supabase.from('game_instances').upsert(
+    const { error } = await supabase.from('game_instances').upsert(
       {
         user_id:      userId,
         player_stats: stats as unknown as Record<string, unknown>,
@@ -58,6 +58,9 @@ export function useGameInstance() {
       // Each user has exactly one active instance row keyed by user_id.
       { onConflict: 'user_id' }
     )
+    if (error) {
+      console.error('Failed to save game instance:', error.message)
+    }
   }, [userId])
 
   /** Fetch the most recent open instance for this user. Returns true if found. */
