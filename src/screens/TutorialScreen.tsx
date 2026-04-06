@@ -862,10 +862,11 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={1} title="Intro to the Game" />
           <NarrativeBox lines={[
-            `BREAKING NEWS: The long-time consigliere of the ${family} in Italy, Lorenzo Bianchi, has died in mysterious circumstances.`,
-            'Multiple media outlets report he died of cancer.',
-            `However, insider sources in the ${family} have hinted at assassination.`,
-            `Bianchi will be succeeded by a young upstart — ${name} — who has risen quickly since joining in 2020.`,
+            `BREAKING NEWS: Palermo wakes to sirens and whispers. Lorenzo Bianchi, long-time consigliere of the ${family}, is dead.`,
+            'Official statement: terminal cancer. Public funeral: tomorrow at dawn.',
+            `Unofficial whispers from the docks and backrooms say otherwise — poison, betrayal, and a council vote made in fear.`,
+            `Before sunrise, captains receive sealed orders: ${name} is to assume command immediately as the new strategist of the family.`,
+            `The city does not trust youth. You have one night to prove you are not a placeholder, but a power to be reckoned with.`,
           ]} />
           <ContinueButton onClick={() => next('chapter1_ricci_reply')} />
         </div>
@@ -876,18 +877,19 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={1} title="Intro to the Game" />
           <NarrativeBox lines={[
-            `RICCI: You should not listen to the paparazzi, my Sig. Ah — I forgot to introduce myself. Welcome, Sig ${name}. I am Francesco Ricci, your advisor.`,
-            'GAME TIP: Your advisor will advise you in-game with tips and tricks. You can choose to listen or ignore them.',
-            `RICCI: I am sure you had nothing to do with Sig Bianchi's death.`,
+            `RICCI: Ignore the newspapers, Sig ${name}. They sell fear, not truth.`,
+            `RICCI: Francesco Ricci. Advisor, fixer, and now your shadow in every room that matters.`,
+            'GAME TIP: Advisors will offer strategic guidance throughout story mode. You can follow, adapt, or reject their advice — each choice shapes trust and outcomes.',
+            `RICCI: If you are innocent, survive. If you are guilty, survive faster. In this life, reputation matters less than control.`,
           ]} />
           <div className="space-y-2">
             <p className="font-label text-[10px] text-gray-400 uppercase tracking-widest">Your response:</p>
             <ChoiceButton
-              label="1. You are right, Sig Ricci. I loved Sig Bianchi like a father."
+              label="1. We stabilize first. Loyalty before rumors."
               onClick={() => next('chapter1_stats_intro', { familiarity: { 'Francesco Ricci': state.familiarity['Francesco Ricci'] + 1 } })}
             />
             <ChoiceButton
-              label="2. Thank you, Sig Ricci. I will not heed these comments."
+              label="2. Let them talk. We answer with results."
               onClick={() => next('chapter1_stats_intro', { familiarity: { 'Francesco Ricci': state.familiarity['Francesco Ricci'] + 1 } })}
             />
           </div>
@@ -899,13 +901,13 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={1} title="Intro to the Game" />
           <NarrativeBox lines={[
-            `RICCI: Let me introduce you to the game, Sig ${name}.`,
+            `RICCI: Before you issue orders, know the people who carry them out, Sig ${name}.`,
             '',
-            `First, the people you know: ${state.characters.join(', ')}.`,
+            `Known inner circle: ${state.characters.join(', ')}.`,
             '',
-            'Familiarity — how close you are with someone. Higher familiarity means they are more likely to collaborate with you. Ranges from 0 (strangers) to 100 (inseparable).',
+            'Familiarity — how close you are with someone. Higher familiarity unlocks cooperation, faster deals, and better outcomes. Range: 0 (strangers) to 100 (inseparable).',
             '',
-            'Loyalty — how loyal someone is to you. Negative loyalty means they may betray you. Ranges from -100 (traitor) to 100 (completely loyal).',
+            'Loyalty — how committed they are to your rule. Negative loyalty can trigger betrayal events. Range: -100 (traitor) to 100 (unbreakable).',
           ]} />
           <div className="border border-[#ffb4ac]/10 bg-[#1a1a1a] p-4 space-y-3">
             <p className="font-label text-[9px] uppercase tracking-widest text-gray-500">Current Relations</p>
@@ -940,10 +942,11 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={1} title="Intro to the Game" />
           <NarrativeBox lines={[
-            'Power is your influence in your region and family. The higher your power, the more ability you have to make people do as you want.',
-            'Power can be increased by acquiring wealth or armies. Ranges from 1 (powerless) to 100 (supreme authority).',
+            'Power is your ability to bend institutions, streets, and rivals to your will.',
+            'Increase power through fear, victories, armies, and strategic alliances. Range: 1 (powerless) to 100 (untouchable).',
             '',
-            'Wealth is how much money you have. The richer you are, the more you can bribe officials and bankroll mercenary armies. Ranges from 1 (destitute) to 100 (enormously wealthy).',
+            'Wealth funds everything: bribes, lawyers, influence, and expansion.',
+            'The richer you are, the more options you can buy before enemies can react. Range: 1 (destitute) to 100 (vast fortune).',
           ]} />
           <div className="grid grid-cols-2 gap-4 border border-[#ffb4ac]/10 bg-[#1a1a1a] p-4">
             <StatBar label="Power" value={state.power} />
@@ -958,14 +961,14 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={1} title="Intro to the Game" />
           <NarrativeBox lines={[
-            'Armies can be used to enforce your will. Great mafia leaders often bankroll large mercenary armies.',
+            'Armies are your final argument when diplomacy fails.',
             '',
-            'There are three types:',
-            '• Mercenary — fight for money. Recruit them by paying up.',
-            '• Core — fight for you out of loyalty. Built slowly over time.',
-            '• Family — fight for the family. Requires leadership of the house.',
+            'Three force pillars define your command:',
+            '• Mercenary — efficient, expensive, and temporary. They follow payment.',
+            '• Core — disciplined loyalists trained under your doctrine.',
+            '• Family — blood-bound veterans who fight for legacy and revenge.',
             '',
-            'Each army unit counts as 1 strength. The more you have, the stronger you become — and armies increase your power significantly.',
+            'Every unit increases combat leverage and intimidation pressure across the map.',
           ]} />
           <div className="border border-[#ffb4ac]/10 bg-[#1a1a1a] p-4">
             <StatBar label="Army Units" value={state.army} max={20} />
@@ -979,9 +982,9 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={1} title="Intro to the Game" />
           <NarrativeBox lines={[
-            'RICCI: Well done!',
-            'In this chapter, you learned the basics of the game: characters, familiarity, loyalty, power, wealth, and armies.',
-            'Next, we will learn about story objectives.',
+            'RICCI: Solid beginning.',
+            'You now understand relationships, loyalty risk, economic pressure, and force projection.',
+            'Next chapter: story objectives — the engine that determines whether your rise is remembered as legend or failure.',
           ]} />
           <ContinueButton onClick={() => next('chapter2_intro')} label="Begin Chapter 2" />
         </div>
@@ -992,12 +995,12 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={2} title="Story Objectives" />
           <NarrativeBox lines={[
-            'Every story starts with a compelling problem, powerful enemies, and underlying objectives.',
+            'Every chapter in story mode is scored by objectives.',
             '',
-            'RICCI: Objectives are like goals. In story mode, to win you must hit as many objectives as possible.',
-            'RICCI: They can include things like [Assemble 10 armies] or [Be the head of family] or [Conquer 2 neighbouring regions].',
-            'RICCI: Each objective has a weight. You win when your completed objectives total a target score — for example, 100 or 200.',
-            'RICCI: Objectives are not permanent. If you later fall below the threshold, you must hit them again.',
+            'RICCI: Think of objectives as contracts with destiny. Complete enough, and the story bends in your favor.',
+            'RICCI: Typical objectives include [Assemble armies], [Secure alliances], [Control regions], and [Stabilize family loyalty].',
+            'RICCI: Each objective carries a weight. Your chapter score is the sum of completed objective weights.',
+            'RICCI: Some are fragile. Lose control later, and the objective can fall back into an incomplete state.',
           ]} />
           <ContinueButton onClick={() => next('chapter2_objectives')} label="Try the Objectives" />
         </div>
@@ -1008,8 +1011,8 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={2} title="Story Objectives" />
           <NarrativeBox lines={[
-            'Complete the three objectives below to reach a total of 100 points.',
-            'Type the command shown beside each objective, then press Execute.',
+            'Field exercise: complete all listed objectives to reach 100 points.',
+            'Enter each command exactly as shown, then execute.',
           ]} />
           <ObjectivesTask onComplete={() => next('chapter2_spy', { objectiveTotal: 100 })} />
         </div>
@@ -1028,16 +1031,17 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={2} title="Story Objectives" />
           <NarrativeBox lines={[
-            `RICCI: Hmmm… You now have your own spy network. That's wonderful, but you need a little something… More!`,
+            `RICCI: Good. Your network can hear doors open and wallets close.`,
+            `RICCI: But intelligence alone does not build empires. We need symbolic power — something the city can see.`,
           ]} />
           <div className="space-y-2">
             <p className="font-label text-[10px] text-gray-400 uppercase tracking-widest">Your response:</p>
             <ChoiceButton
-              label="1. A little something more? What do you mean, Sig Ricci?"
+              label="1. Then give me the next objective."
               onClick={() => next('chapter2_vineyard')}
             />
             <ChoiceButton
-              label="2. That's enough, Sig Ricci. I'm tired."
+              label="2. This pace will burn us out, Ricci."
               onClick={() => next('chapter2_vineyard')}
               variant="danger"
             />
@@ -1058,9 +1062,9 @@ export default function TutorialScreen() {
         <div className="space-y-5">
           <ChapterHeader number={2} title="Story Objectives" />
           <NarrativeBox lines={[
-            `RICCI: That was incredible! You're the fastest learner I've seen!`,
-            `RICCI: I'm sure you will lead the ${family} to new heights.`,
-            'RICCI: Cheers to a new world!',
+            `RICCI: Excellent. You completed intelligence, operations, and symbolic expansion in one sweep.`,
+            `RICCI: The ${family} now has momentum — and momentum is harder to kill than men.`,
+            'RICCI: Finish the next chapters with the same discipline, and the city will speak your name in whispers.',
           ]} />
           <ContinueButton onClick={() => next('chapter3_intro')} label="Begin Chapter 3" />
         </div>

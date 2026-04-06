@@ -5,8 +5,30 @@
 import time
 
 families = {
-    "Italy": ["Famiglia del Brenta", "Banda della Comasina", "Banda della Magliana", "Famiglia Cosentino", "Sacra Corona Unita", "La Ndrangheta", "La Camorra", "La Cosa Nostra"],
-    "US": ["Famiglia Gambino","Famiglia Lucchese","Famiglia Genovese","Famiglia Bonanno","Famiglia Colombo",],
+    "Italy": [
+        "Famiglia del Brenta",
+        "Banda della Comasina",
+        "Banda della Magliana",
+        "Famiglia Cosentino",
+        "Sacra Corona Unita",
+        "La Ndrangheta",
+        "La Camorra",
+        "La Cosa Nostra",
+        "Stidda",
+        "Mala del Brenta"
+    ],
+    "US": [
+        "Famiglia Gambino",
+        "Famiglia Lucchese",
+        "Famiglia Genovese",
+        "Famiglia Bonanno",
+        "Famiglia Colombo",
+        "Chicago Outfit",
+        "Philadelphia Crime Family",
+        "Buffalo Crime Family",
+        "Patriarca Crime Family",
+        "DeCavalcante Crime Family"
+    ],
     "Britain": ["Peaky Blinders"]
 }
 
@@ -42,6 +64,8 @@ class World:
       print("6. La Ndrangheta, in Calabria.")
       print("7. La Camorra, in Campania.")
       print("8. La Cosa Nostra, in Sicily.")
+      print("9. Stidda, in Sicily.")
+      print("10. Mala del Brenta, in Veneto.")
 
       pick = int(input("Your family: "))
       self.family = families["Italy"][pick-1]
@@ -55,6 +79,11 @@ class World:
       print("3. Famiglia Genovese, in New York.")
       print("4. Famiglia Bonanno, in New York.")
       print("5. Famiglia Colombo, in New York.")
+      print("6. Chicago Outfit, in Chicago.")
+      print("7. Philadelphia Crime Family, in Philadelphia.")
+      print("8. Buffalo Crime Family, in Buffalo.")
+      print("9. Patriarca Crime Family, in New England.")
+      print("10. DeCavalcante Crime Family, in New Jersey.")
 
       pick = int(input("Your family: "))
       self.family = families["US"][pick-1]
