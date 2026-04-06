@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useSupabaseAuth, useGameInstance } from '@/hooks/useSupabase'
 import { SideNav } from '@/components/SideNav'
@@ -119,7 +119,6 @@ function InstanceRestorer() {
   const instanceChecked    = useGameStore((s) => s.instanceChecked)
   const setInstanceChecked = useGameStore((s) => s.setInstanceChecked)
   const { loadInstance }   = useGameInstance()
-  const navigate           = useNavigate()
   const didRun             = useRef(false)
 
   useEffect(() => {
@@ -127,9 +126,9 @@ function InstanceRestorer() {
     didRun.current = true
     void loadInstance().then((found) => {
       setInstanceChecked(true)
-      if (found) navigate('/game', { replace: true })
+      if (!found) return
     })
-  }, [userId, player, instanceChecked, loadInstance, navigate, setInstanceChecked])
+  }, [userId, player, instanceChecked, loadInstance, setInstanceChecked])
 
   return null
 }

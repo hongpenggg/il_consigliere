@@ -12,7 +12,7 @@ export default function AuthScreen() {
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
 
-  const { signIn, signUp, signInWithMagicLink } = useSupabaseAuth()
+  const { signIn, signUp, signInWithMagicLink, signInWithGoogle } = useSupabaseAuth()
   const navigate = useNavigate()
 
   async function handleSubmit(e: React.FormEvent) {
@@ -37,6 +37,19 @@ export default function AuthScreen() {
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Something went wrong.')
     } finally {
+      setLoading(false)
+    }
+  }
+
+  async function handleGoogleAuth() {
+    setError(null)
+    setSuccess(null)
+    setLoading(true)
+    try {
+      const { error: err } = await signInWithGoogle()
+      if (err) throw err
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Google sign-in failed.')
       setLoading(false)
     }
   }
@@ -86,6 +99,24 @@ export default function AuthScreen() {
 
         {/* Form */}
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
+          <button
+            type="button"
+            onClick={() => void handleGoogleAuth()}
+            disabled={loading}
+            className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <span className="material-symbols-outlined text-base">account_circle</span>
+            <span className="font-label text-[10px] uppercase tracking-widest text-on-surface/80">
+              Continue with Google
+            </span>
+          </button>
+
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-outline-variant/20" />
+            <span className="font-label text-[9px] uppercase tracking-widest text-on-surface/30">or</span>
+            <div className="h-px flex-1 bg-outline-variant/20" />
+          </div>
+
           <div>
             <label className="block font-label text-[10px] uppercase tracking-widest text-on-surface/60 mb-2">
               Email

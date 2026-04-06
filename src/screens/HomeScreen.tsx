@@ -5,9 +5,20 @@ import { useSupabaseAuth } from '@/hooks/useSupabase'
 import type { PlayerStats } from '@/types'
 
 const AFFILIATIONS = [
-  { id: 'cosa_nostra', label: 'Cosa Nostra', desc: 'Sicily. The original order. Honour above everything.' },
-  { id: 'camorra', label: 'Camorra', desc: 'Naples. Street-level power. Fast, ruthless, loyal to coin.' },
-  { id: 'ndrangheta', label: "'Ndrangheta", desc: 'Calabria. Blood ties only. The most secretive family.' },
+  { id: 'famiglia_del_brenta', label: 'Famiglia del Brenta', desc: 'Veneto. Precision operators with deep local roots.' },
+  { id: 'banda_della_comasina', label: 'Banda della Comasina', desc: 'Lombardy. Fast expansion through urban pressure.' },
+  { id: 'banda_della_magliana', label: 'Banda della Magliana', desc: 'Lazio. Political leverage and street control.' },
+  { id: 'famiglia_cosentino', label: 'Famiglia Cosentino', desc: 'Basilicata. Quiet moves, long memory, hard reprisals.' },
+  { id: 'sacra_corona_unita', label: 'Sacra Corona Unita', desc: 'Apulia. Smuggling routes and coastal influence.' },
+  { id: 'ndrangheta', label: 'La Ndrangheta', desc: 'Calabria. Blood ties only. The most secretive family.' },
+  { id: 'camorra', label: 'La Camorra', desc: 'Campania. Street-level power. Fast, ruthless, loyal to coin.' },
+  { id: 'cosa_nostra', label: 'La Cosa Nostra', desc: 'Sicily. The original order. Honour above everything.' },
+  { id: 'gambino', label: 'Famiglia Gambino', desc: 'New York. High-volume operations and strategic intimidation.' },
+  { id: 'lucchese', label: 'Famiglia Lucchese', desc: 'New York. Quiet influence through unions and ports.' },
+  { id: 'genovese', label: 'Famiglia Genovese', desc: 'New York. Institutional power with disciplined command.' },
+  { id: 'bonanno', label: 'Famiglia Bonanno', desc: 'New York. Opportunistic alliances and aggressive succession.' },
+  { id: 'colombo', label: 'Famiglia Colombo', desc: 'New York. Resilient old guard with contested fronts.' },
+  { id: 'peaky_blinders', label: 'Peaky Blinders', desc: 'Britain. Razor-sharp tactics and industrial-era networks.' },
   { id: 'independent', label: 'Independent', desc: 'No flag. No loyalty. Only opportunity.' },
 ] as const
 
@@ -15,10 +26,10 @@ export default function HomeScreen() {
   const [step, setStep] = useState<'landing' | 'setup'>('landing')
   const [name, setName] = useState('')
   const [familyName, setFamilyName] = useState('')
-  const [affiliation, setAffiliation] = useState<PlayerStats['affiliation']>('cosa_nostra')
+  const [affiliation, setAffiliation] = useState<PlayerStats['affiliation']>('famiglia_del_brenta')
   const [error, setError] = useState('')
 
-  const { setPlayer, player, resetGame, userId } = useGameStore()
+  const { setPlayer, player, resetGame, userId, instanceChecked } = useGameStore()
   const { signOut } = useSupabaseAuth()
   const navigate = useNavigate()
 
@@ -259,6 +270,14 @@ export default function HomeScreen() {
                   play_arrow
                 </span>
               </button>
+            )}
+
+            {!!userId && !player && !instanceChecked && (
+              <div className="px-6 py-5 bg-surface-container-low border border-outline-variant/30">
+                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface/40">
+                  Checking your active game...
+                </p>
+              </div>
             )}
           </div>
         </main>

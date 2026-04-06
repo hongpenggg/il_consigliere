@@ -34,7 +34,15 @@ export function useSupabaseAuth() {
     return supabase.auth.signOut()
   }, [])
 
-  return { signIn, signUp, signInWithMagicLink, signOut }
+  const signInWithGoogle = useCallback(async () => {
+    const redirectTo = `${window.location.origin}/`
+    return supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo },
+    })
+  }, [])
+
+  return { signIn, signUp, signInWithMagicLink, signInWithGoogle, signOut }
 }
 
 // ─── Game Instances ───────────────────────────────────────────────────────────

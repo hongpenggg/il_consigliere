@@ -5,7 +5,22 @@ export interface PlayerStats {
   name: string
   familyName: string
   territory: string
-  affiliation: 'cosa_nostra' | 'camorra' | 'ndrangheta' | 'independent'
+  affiliation:
+    | 'famiglia_del_brenta'
+    | 'banda_della_comasina'
+    | 'banda_della_magliana'
+    | 'famiglia_cosentino'
+    | 'sacra_corona_unita'
+    | 'ndrangheta'
+    | 'camorra'
+    | 'cosa_nostra'
+    | 'gambino'
+    | 'lucchese'
+    | 'genovese'
+    | 'bonanno'
+    | 'colombo'
+    | 'peaky_blinders'
+    | 'independent'
   rank: string
   wealth: number
   loyalty: number
