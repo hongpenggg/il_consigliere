@@ -692,10 +692,10 @@ function BusinessTask({ onComplete }: { onComplete: (addedWealth: number, busine
   const [wealthGain, setWealthGain] = useState(0)
   const [picked, setPicked] = useState<string[]>([])
   const entries = [
-    { id: 'casino', label: "Casino Royale", gain: 40 },
-    { id: 'brothel', label: 'Lux the Club', gain: 30 },
-    { id: 'racketeering', label: 'Al Capone Front', gain: 25 },
-    { id: 'heist', label: 'Louvre Heist', gain: 20 },
+    { id: 'casino', label: "Palermo Grand Casino", gain: 40 },
+    { id: 'brothel', label: 'Catania Velvet House', gain: 30 },
+    { id: 'racketeering', label: 'Palermo Market Tribute Ring', gain: 25 },
+    { id: 'heist', label: 'Messina Cathedral Treasury Heist', gain: 20 },
   ]
 
   function choose(id: string, gain: number) {
