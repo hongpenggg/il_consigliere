@@ -8,10 +8,21 @@ type Affiliation = PlayerStats['affiliation']
 type Territory = PlayerStats['territory']
 
 const AFFILIATIONS: { value: Affiliation; label: string; desc: string }[] = [
-  { value: 'cosa_nostra', label: 'Cosa Nostra', desc: 'The original. Roots in Sicily, reach across the Atlantic.' },
-  { value: 'camorra',     label: 'Camorra',     desc: 'Naples. Street-level power. Fast, ruthless, loyal to coin.' },
-  { value: 'ndrangheta',  label: "'Ndrangheta",  desc: 'Calabria. Blood ties only. The most secretive family.' },
-  { value: 'independent', label: 'Independent',  desc: 'No flag. No loyalty. Only opportunity.' },
+  { value: 'famiglia_del_brenta', label: 'Famiglia del Brenta', desc: 'Veneto. Precision operators with deep local roots.' },
+  { value: 'banda_della_comasina', label: 'Banda della Comasina', desc: 'Lombardy. Fast expansion through urban pressure.' },
+  { value: 'banda_della_magliana', label: 'Banda della Magliana', desc: 'Lazio. Political leverage and street control.' },
+  { value: 'famiglia_cosentino', label: 'Famiglia Cosentino', desc: 'Basilicata. Quiet moves, long memory, hard reprisals.' },
+  { value: 'sacra_corona_unita', label: 'Sacra Corona Unita', desc: 'Apulia. Smuggling routes and coastal influence.' },
+  { value: 'ndrangheta',  label: 'La Ndrangheta',  desc: 'Calabria. Blood ties only. The most secretive family.' },
+  { value: 'camorra',     label: 'La Camorra',     desc: 'Campania. Street-level power. Fast, ruthless, loyal to coin.' },
+  { value: 'cosa_nostra', label: 'La Cosa Nostra', desc: 'Sicily. The original. Roots in Sicily, reach across the Atlantic.' },
+  { value: 'gambino', label: 'Famiglia Gambino', desc: 'New York. High-volume operations and strategic intimidation.' },
+  { value: 'lucchese', label: 'Famiglia Lucchese', desc: 'New York. Quiet influence through unions and ports.' },
+  { value: 'genovese', label: 'Famiglia Genovese', desc: 'New York. Institutional power with disciplined command.' },
+  { value: 'bonanno', label: 'Famiglia Bonanno', desc: 'New York. Opportunistic alliances and aggressive succession.' },
+  { value: 'colombo', label: 'Famiglia Colombo', desc: 'New York. Resilient old guard with contested fronts.' },
+  { value: 'peaky_blinders', label: 'Peaky Blinders', desc: 'Britain. Razor-sharp tactics and industrial-era networks.' },
+  { value: 'independent', label: 'Independent', desc: 'No flag. No loyalty. Only opportunity.' },
 ]
 
 const TERRITORIES: { value: Territory; label: string; desc: string }[] = [
@@ -39,7 +50,7 @@ export default function SetupScreen() {
 
   const [name, setName] = useState('')
   const [familyName, setFamilyName] = useState('')
-  const [affiliation, setAffiliation] = useState<Affiliation>('cosa_nostra')
+  const [affiliation, setAffiliation] = useState<Affiliation>('famiglia_del_brenta')
   const [territory, setTerritory] = useState<Territory>('italy')
   const [error, setError] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)

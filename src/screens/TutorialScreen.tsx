@@ -692,10 +692,13 @@ function BusinessTask({ onComplete }: { onComplete: (addedWealth: number, busine
   const [wealthGain, setWealthGain] = useState(0)
   const [picked, setPicked] = useState<string[]>([])
   const entries = [
-    { id: 'casino', label: "Palermo Grand Casino", gain: 40 },
-    { id: 'brothel', label: 'Catania Velvet House', gain: 30 },
-    { id: 'racketeering', label: 'Palermo Market Tribute Ring', gain: 25 },
-    { id: 'heist', label: 'Messina Cathedral Treasury Heist', gain: 20 },
+    { id: 'rob', label: "Rob a Bank [type 'rob']", gain: 10 },
+    { id: 'heist', label: "Plan a Louvre Heist [type 'heist']", gain: 20 },
+    { id: 'vehicle', label: "Stop a Bank Armoured Vehicle [type 'vehicle']", gain: 10 },
+    { id: 'casino_royale', label: "Start a Casino [type 'casino royale']", gain: 40 },
+    { id: 'lux_the_club', label: "Start a Brothel [type 'lux the club']", gain: 30 },
+    { id: 'al_capone', label: "Start a Racketeering Front [type 'al capone']", gain: 25 },
+    { id: 'palantir', label: "Insider Trading [type 'stop that palantir']", gain: 60 },
   ]
 
   function choose(id: string, gain: number) {
@@ -709,7 +712,7 @@ function BusinessTask({ onComplete }: { onComplete: (addedWealth: number, busine
   return (
     <div className="space-y-3">
       <div className="border border-[#ffb4ac]/10 bg-[#1a1a1a] p-3">
-        <p className="font-body text-sm text-gray-300">Build ventures until you gain at least +60 wealth.</p>
+        <p className="font-body text-sm text-gray-300">RICCI: Build wealth through long-term ventures and high-risk operations until you gain at least +60 wealth.</p>
         <p className="font-label text-[10px] text-[#ffb4ac] mt-2">Wealth gain: +{wealthGain}</p>
       </div>
       <div className="space-y-2">
@@ -1187,7 +1190,9 @@ export default function TutorialScreen() {
           <NarrativeBox lines={[
             'RICCI: You\'re truly on your way to greatness!',
             '',
-            `RICCI: Remember, Sig ${name} — power is earned, not given. Wealth opens doors, but loyalty keeps them open.`,
+            'RICCI: Wealth is not only your personal money. Family wealth includes the combined strength of all members.',
+            'RICCI: In real play, choices have costs and requirements. Some moves are blocked if your wealth, power, or familiarity are too low.',
+            'RICCI: You are usually limited to one choice per turn — be economical.',
             '',
             `RICCI: The ${family} stands stronger today because of your decisions. Continue building your empire — the real game begins now.`,
           ]} />
@@ -1346,6 +1351,7 @@ export default function TutorialScreen() {
           <NarrativeBox lines={[
             'RICCI: Business is the bloodstream of power.',
             'Violence takes cities. Cash keeps them.',
+            'RICCI: The strongest empires rely on long-term cashflow — casinos, brothels, and racketeering fronts.',
           ]} />
           <ContinueButton onClick={() => next('chapter8_business')} label="Start Ventures" />
         </div>
