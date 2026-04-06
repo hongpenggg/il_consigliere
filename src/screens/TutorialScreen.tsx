@@ -1,5 +1,5 @@
 // TutorialScreen.tsx
-// Interactive tutorial — mirrors the Python game's Chapters 0–3.
+// Interactive tutorial — mirrors the Python game's Chapters 0–10.
 // Each chapter presents narrative text, choices, and mini-tasks.
 
 import { useState, useRef, useCallback } from 'react'
@@ -27,6 +27,27 @@ type Phase =
   | 'chapter3_kidnap'
   | 'chapter3_mayor2'
   | 'chapter3_end'
+  | 'chapter4_intro'
+  | 'chapter4_drill'
+  | 'chapter4_end'
+  | 'chapter5_intro'
+  | 'chapter5_trust'
+  | 'chapter5_end'
+  | 'chapter6_intro'
+  | 'chapter6_map'
+  | 'chapter6_end'
+  | 'chapter7_intro'
+  | 'chapter7_war'
+  | 'chapter7_end'
+  | 'chapter8_intro'
+  | 'chapter8_business'
+  | 'chapter8_end'
+  | 'chapter9_intro'
+  | 'chapter9_boosts'
+  | 'chapter9_end'
+  | 'chapter10_intro'
+  | 'chapter10_boss'
+  | 'chapter10_end'
   | 'done'
 
 interface TutorialState {
@@ -41,6 +62,13 @@ interface TutorialState {
   completedObjectives: string[]
   mayorTries: number
   ricciFamiliarityBonus: number
+  recruitedTypes: string[]
+  relationshipMoves: string[]
+  regionsControlled: string[]
+  warBattlesWon: string[]
+  businessesStarted: string[]
+  starterPackage: string | null
+  bossOutcome: 'pending' | 'won' | 'lost'
 }
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -461,6 +489,269 @@ function VineyardTask({ onComplete }: { onComplete: () => void }) {
   )
 }
 
+function ArmyDrillTask({ onComplete }: { onComplete: (units: number, types: string[]) => void }) {
+  const [input, setInput] = useState('')
+  const [error, setError] = useState('')
+  const [units, setUnits] = useState(0)
+  const [types, setTypes] = useState<string[]>([])
+  const [log, setLog] = useState<string[]>([])
+
+  async function recruit(kind: 'mercenary' | 'core' | 'family') {
+    const labels = {
+      mercenary: ['Paying captains... [0%]', 'Signing contracts... [60%]', '✔ Mercenary battalion recruited.'],
+      core: ['Testing loyalty... [0%]', 'Training trusted men... [60%]', '✔ Core guard formed.'],
+      family: ['Calling the bloodline... [0%]', 'Rallying house veterans... [60%]', '✔ Family regiment assembled.'],
+    }
+    for (const step of labels[kind]) {
+      await new Promise<void>((r) => setTimeout(r, 700))
+      setLog((l) => [...l, step])
+    }
+    setTypes((prev) => (prev.includes(kind) ? prev : [...prev, kind]))
+    setUnits((u) => u + 2)
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const val = input.trim().toLowerCase()
+    setError('')
+    if (val !== 'mercenary' && val !== 'core' && val !== 'family') {
+      setError("Use 'mercenary', 'core', or 'family'.")
+      return
+    }
+    setInput('')
+    await recruit(val)
+  }
+
+  const ready = units >= 6 && types.length === 3
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-[#ffb4ac]/15 bg-[#1a1a1a] p-3">
+        <p className="font-label text-[10px] text-gray-400 uppercase tracking-widest mb-1">Army Drill</p>
+        <p className="font-body text-sm text-gray-300">Recruit each army type once. Commands: <code className="text-[#ffb4ac]">mercenary</code>, <code className="text-[#ffb4ac]">core</code>, <code className="text-[#ffb4ac]">family</code>.</p>
+        <p className="font-label text-[10px] text-[#ffb4ac] mt-2">Units raised: {units} / 6</p>
+      </div>
+      {log.length > 0 && (
+        <div className="border border-[#ffb4ac]/10 bg-[#161616] p-3 space-y-1 max-h-36 overflow-y-auto">
+          {log.map((l, i) => <p key={i} className={`font-label text-[10px] ${l.startsWith('✔') ? 'text-emerald-400' : 'text-gray-500'}`}>{l}</p>)}
+        </div>
+      )}
+      {!ready ? (
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Recruit type..."
+            className="flex-1 bg-[#1a1a1a] border border-[#ffb4ac]/20 px-3 py-2 font-label text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#ffb4ac]/50"
+          />
+          <button type="submit" className="px-4 py-2 bg-[#89070e] font-label text-[10px] uppercase tracking-widest text-white hover:bg-[#89070e]/80 transition-all">
+            Recruit
+          </button>
+        </form>
+      ) : (
+        <ContinueButton onClick={() => onComplete(units, types)} label="Secure the Armies" />
+      )}
+      {error && <p className="font-label text-[10px] text-red-400">{error}</p>}
+    </div>
+  )
+}
+
+function RelationshipTask({ onComplete }: { onComplete: (bonus: number, moves: string[]) => void }) {
+  const [input, setInput] = useState('')
+  const [moves, setMoves] = useState<string[]>([])
+  const [bonus, setBonus] = useState(0)
+  const [error, setError] = useState('')
+  const [log, setLog] = useState<string[]>([])
+
+  async function perform(action: 'coffee' | 'dinner' | 'favor') {
+    const lines = {
+      coffee: ['Meeting Ricci over espresso... [0%]', 'Trading insights... [100%]', '✔ Trust improved.'],
+      dinner: ['Hosting a Palermo dinner... [0%]', 'Public show of unity... [100%]', '✔ Familiarity increased.'],
+      favor: ['Handling a private request... [0%]', 'Debt of honor secured... [100%]', '✔ Loyalty reinforced.'],
+    }
+    for (const step of lines[action]) {
+      await new Promise<void>((r) => setTimeout(r, 700))
+      setLog((l) => [...l, step])
+    }
+    if (!moves.includes(action)) {
+      setMoves((m) => [...m, action])
+      setBonus((b) => b + 2)
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const val = input.trim().toLowerCase()
+    setError('')
+    if (val !== 'coffee' && val !== 'dinner' && val !== 'favor') {
+      setError("Use 'coffee', 'dinner', or 'favor'.")
+      return
+    }
+    setInput('')
+    await perform(val)
+  }
+
+  const done = moves.length === 3
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-[#ffb4ac]/15 bg-[#1a1a1a] p-3">
+        <p className="font-body text-sm text-gray-300">Build trust with Ricci using all three actions: <code className="text-[#ffb4ac]">coffee</code>, <code className="text-[#ffb4ac]">dinner</code>, <code className="text-[#ffb4ac]">favor</code>.</p>
+        <p className="font-label text-[10px] text-[#ffb4ac] mt-2">Relationship bonus: +{bonus}</p>
+      </div>
+      {log.length > 0 && (
+        <div className="border border-[#ffb4ac]/10 bg-[#161616] p-3 space-y-1 max-h-32 overflow-y-auto">
+          {log.map((l, i) => <p key={i} className={`font-label text-[10px] ${l.startsWith('✔') ? 'text-emerald-400' : 'text-gray-500'}`}>{l}</p>)}
+        </div>
+      )}
+      {!done ? (
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <input
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            placeholder="Action..."
+            className="flex-1 bg-[#1a1a1a] border border-[#ffb4ac]/20 px-3 py-2 font-label text-xs text-gray-200 placeholder-gray-600 focus:outline-none focus:border-[#ffb4ac]/50"
+          />
+          <button type="submit" className="px-4 py-2 bg-[#89070e] font-label text-[10px] uppercase tracking-widest text-white hover:bg-[#89070e]/80 transition-all">
+            Commit
+          </button>
+        </form>
+      ) : (
+        <ContinueButton onClick={() => onComplete(bonus, moves)} label="Lock In Alliances" />
+      )}
+      {error && <p className="font-label text-[10px] text-red-400">{error}</p>}
+    </div>
+  )
+}
+
+function MapTask({ onComplete }: { onComplete: (regions: string[]) => void }) {
+  const [selected, setSelected] = useState<string[]>([])
+  const regions = ['Sicily', 'Naples', 'Calabria', 'Apulia', 'Lombardy']
+  const done = selected.length >= 3
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-[#ffb4ac]/10 bg-[#1a1a1a] p-3">
+        <p className="font-body text-sm text-gray-300">Choose at least 3 regions to establish influence routes.</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {regions.map((r) => (
+          <ChoiceButton
+            key={r}
+            label={`${selected.includes(r) ? '✔' : '•'} ${r}`}
+            onClick={() => {
+              setSelected((prev) => prev.includes(r) ? prev.filter((x) => x !== r) : [...prev, r])
+            }}
+            variant={selected.includes(r) ? 'success' : 'default'}
+          />
+        ))}
+      </div>
+      <p className="font-label text-[10px] text-gray-500">Controlled: {selected.join(', ') || 'None'}</p>
+      {done && <ContinueButton onClick={() => onComplete(selected)} label="Confirm Routes" />}
+    </div>
+  )
+}
+
+function WarTask({ onComplete }: { onComplete: (wins: string[]) => void }) {
+  const [wins, setWins] = useState<string[]>([])
+  const [error, setError] = useState('')
+  const battlefields = ['Harbor', 'Hilltop', 'City Gate']
+  const done = wins.length === battlefields.length
+
+  function winBattle(field: string) {
+    if (wins.includes(field)) {
+      setError('Battle already won. Choose another front.')
+      return
+    }
+    setError('')
+    setWins((w) => [...w, field])
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-red-500/20 bg-red-900/5 p-3">
+        <p className="font-body text-sm text-gray-300">Conquest drill: win all three fronts to secure the region.</p>
+      </div>
+      <div className="space-y-2">
+        {battlefields.map((f) => (
+          <ChoiceButton
+            key={f}
+            label={`${wins.includes(f) ? '✔' : '⚔'} ${f}`}
+            onClick={() => winBattle(f)}
+            variant={wins.includes(f) ? 'success' : 'danger'}
+          />
+        ))}
+      </div>
+      {error && <p className="font-label text-[10px] text-red-400">{error}</p>}
+      {done && <ContinueButton onClick={() => onComplete(wins)} label="Claim Conquest" />}
+    </div>
+  )
+}
+
+function BusinessTask({ onComplete }: { onComplete: (addedWealth: number, businesses: string[]) => void }) {
+  const [wealthGain, setWealthGain] = useState(0)
+  const [picked, setPicked] = useState<string[]>([])
+  const entries = [
+    { id: 'casino', label: "Casino Royale", gain: 40 },
+    { id: 'brothel', label: 'Lux the Club', gain: 30 },
+    { id: 'racketeering', label: 'Al Capone Front', gain: 25 },
+    { id: 'heist', label: 'Louvre Heist', gain: 20 },
+  ]
+
+  function choose(id: string, gain: number) {
+    if (picked.includes(id)) return
+    setPicked((p) => [...p, id])
+    setWealthGain((w) => w + gain)
+  }
+
+  const done = wealthGain >= 60
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-[#ffb4ac]/10 bg-[#1a1a1a] p-3">
+        <p className="font-body text-sm text-gray-300">Build ventures until you gain at least +60 wealth.</p>
+        <p className="font-label text-[10px] text-[#ffb4ac] mt-2">Wealth gain: +{wealthGain}</p>
+      </div>
+      <div className="space-y-2">
+        {entries.map((e) => (
+          <ChoiceButton
+            key={e.id}
+            label={`${picked.includes(e.id) ? '✔' : '+'} ${e.label} [+${e.gain} wealth]`}
+            onClick={() => choose(e.id, e.gain)}
+            variant={picked.includes(e.id) ? 'success' : 'default'}
+          />
+        ))}
+      </div>
+      {done && <ContinueButton onClick={() => onComplete(wealthGain, picked)} label="Bank the Profits" />}
+    </div>
+  )
+}
+
+function BossTask({ onComplete }: { onComplete: (result: 'won' | 'lost') => void }) {
+  const [choice, setChoice] = useState<'power' | 'wealth' | 'allies' | null>(null)
+
+  return (
+    <div className="space-y-3">
+      <div className="border border-[#ffb4ac]/15 bg-[#1a1a1a] p-3">
+        <p className="font-body text-sm text-gray-300">The boss tests your doctrine. Choose your opening move.</p>
+      </div>
+      <ChoiceButton label="Use raw power to intimidate the boss." variant="danger" onClick={() => setChoice('power')} />
+      <ChoiceButton label="Use wealth to buy his network overnight." onClick={() => setChoice('wealth')} />
+      <ChoiceButton label="Use alliances and loyalty to isolate him." variant="success" onClick={() => setChoice('allies')} />
+      {choice && (
+        <div className="border border-[#ffb4ac]/10 bg-[#161616] p-3 space-y-2">
+          <p className="font-body text-sm text-gray-300">
+            {choice === 'allies'
+              ? 'Your coalition fractures the boss from within. He kneels before the family council.'
+              : 'The move lands hard, but sparks backlash. You survive, yet the boss remains standing.'}
+          </p>
+          <ContinueButton onClick={() => onComplete(choice === 'allies' ? 'won' : 'lost')} label="Resolve the Trial" />
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ─── Chapter header ───────────────────────────────────────────────────────────
 
 function ChapterHeader({ number, title }: { number: number; title: string }) {
@@ -492,6 +783,13 @@ export default function TutorialScreen() {
     completedObjectives: [],
     mayorTries: 0,
     ricciFamiliarityBonus: 0,
+    recruitedTypes: [],
+    relationshipMoves: [],
+    regionsControlled: [],
+    warBattlesWon: [],
+    businessesStarted: [],
+    starterPackage: null,
+    bossOutcome: 'pending',
   })
 
   const [mayorChoice, setMayorChoice] = useState<1 | 2 | null>(null)
@@ -506,6 +804,13 @@ export default function TutorialScreen() {
     'chapter1_news', 'chapter1_ricci_reply', 'chapter1_stats_intro', 'chapter1_stat_panel', 'chapter1_army', 'chapter1_end',
     'chapter2_intro', 'chapter2_objectives', 'chapter2_spy', 'chapter2_ricci_choice', 'chapter2_vineyard', 'chapter2_end',
     'chapter3_intro', 'chapter3_mayor1', 'chapter3_kidnap', 'chapter3_mayor2', 'chapter3_end',
+    'chapter4_intro', 'chapter4_drill', 'chapter4_end',
+    'chapter5_intro', 'chapter5_trust', 'chapter5_end',
+    'chapter6_intro', 'chapter6_map', 'chapter6_end',
+    'chapter7_intro', 'chapter7_war', 'chapter7_end',
+    'chapter8_intro', 'chapter8_business', 'chapter8_end',
+    'chapter9_intro', 'chapter9_boosts', 'chapter9_end',
+    'chapter10_intro', 'chapter10_boss', 'chapter10_end',
     'done',
   ]
   const progressPct = ((CHAPTER_ORDER.indexOf(state.phase)) / (CHAPTER_ORDER.length - 1)) * 100
@@ -898,6 +1203,246 @@ export default function TutorialScreen() {
               ))}
             </div>
           </div>
+          <ContinueButton onClick={() => next('chapter4_intro')} label="Begin Chapter 4" />
+        </div>
+      )}
+
+      {/* ─── CHAPTER 4: ARMIES ──────────────────────────────────────────────── */}
+      {state.phase === 'chapter4_intro' && (
+        <div className="space-y-5">
+          <ChapterHeader number={4} title="Armies" />
+          <NarrativeBox lines={[
+            'RICCI: Armies are not numbers — they are instruments of pressure.',
+            'In the field, you command mercenary, core, and family forces for different purposes.',
+            'A true consigliere mixes them, then points them with precision.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter4_drill')} label="Run Army Drill" />
+        </div>
+      )}
+
+      {state.phase === 'chapter4_drill' && (
+        <div className="space-y-5">
+          <ChapterHeader number={4} title="Armies" />
+          <ArmyDrillTask onComplete={(units, types) => next('chapter4_end', { army: state.army + units, power: Math.min(100, state.power + 8), recruitedTypes: types })} />
+        </div>
+      )}
+
+      {state.phase === 'chapter4_end' && (
+        <div className="space-y-5">
+          <ChapterHeader number={4} title="Armies" />
+          <NarrativeBox lines={[
+            'RICCI: Excellent. You now know how to raise force by doctrine, not panic.',
+            `Army types fielded: ${state.recruitedTypes.join(', ') || 'none'}.`,
+            'Next, we shape relationships — because every war is decided before swords are drawn.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter5_intro')} label="Begin Chapter 5" />
+        </div>
+      )}
+
+      {/* ─── CHAPTER 5: RELATIONSHIPS ───────────────────────────────────────── */}
+      {state.phase === 'chapter5_intro' && (
+        <div className="space-y-5">
+          <ChapterHeader number={5} title="Relationships" />
+          <NarrativeBox lines={[
+            'RICCI: Influence is borrowed from people who trust you.',
+            'Familiarity opens doors. Loyalty keeps knives out of your back.',
+            'We will reinforce our bond step by step.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter5_trust')} label="Build Trust" />
+        </div>
+      )}
+
+      {state.phase === 'chapter5_trust' && (
+        <div className="space-y-5">
+          <ChapterHeader number={5} title="Relationships" />
+          <RelationshipTask
+            onComplete={(bonus, moves) => next('chapter5_end', {
+              familiarity: { ...state.familiarity, 'Francesco Ricci': state.familiarity['Francesco Ricci'] + bonus },
+              loyalty: { ...state.loyalty, 'Francesco Ricci': state.loyalty['Francesco Ricci'] + bonus },
+              relationshipMoves: moves,
+            })}
+          />
+        </div>
+      )}
+
+      {state.phase === 'chapter5_end' && (
+        <div className="space-y-5">
+          <ChapterHeader number={5} title="Relationships" />
+          <NarrativeBox lines={[
+            'RICCI: Good. You understand the language of trust.',
+            `Moves used: ${state.relationshipMoves.join(', ') || 'none'}.`,
+            'Next: regions and maps — where influence becomes territory.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter6_intro')} label="Begin Chapter 6" />
+        </div>
+      )}
+
+      {/* ─── CHAPTER 6: MAPS AND REGIONS ────────────────────────────────────── */}
+      {state.phase === 'chapter6_intro' && (
+        <div className="space-y-5">
+          <ChapterHeader number={6} title="Maps and Regions" />
+          <NarrativeBox lines={[
+            'RICCI: Borders decide logistics, taxation, and the speed of violence.',
+            'Choose your route network wisely — every region is a lever.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter6_map')} label="Survey the Map" />
+        </div>
+      )}
+
+      {state.phase === 'chapter6_map' && (
+        <div className="space-y-5">
+          <ChapterHeader number={6} title="Maps and Regions" />
+          <MapTask onComplete={(regions) => next('chapter6_end', { regionsControlled: regions, power: Math.min(100, state.power + 4) })} />
+        </div>
+      )}
+
+      {state.phase === 'chapter6_end' && (
+        <div className="space-y-5">
+          <ChapterHeader number={6} title="Maps and Regions" />
+          <NarrativeBox lines={[
+            `Controlled routes established: ${state.regionsControlled.join(', ') || 'none'}.`,
+            'RICCI: Territory gives your name weight.',
+            'Now we test that weight in open conflict.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter7_intro')} label="Begin Chapter 7" />
+        </div>
+      )}
+
+      {/* ─── CHAPTER 7: WAR AND CONQUEST ────────────────────────────────────── */}
+      {state.phase === 'chapter7_intro' && (
+        <div className="space-y-5">
+          <ChapterHeader number={7} title="War and Conquest" />
+          <NarrativeBox lines={[
+            'RICCI: Conquest is administration after violence.',
+            'Win the fronts, then hold them with fear and order.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter7_war')} label="Open the Fronts" />
+        </div>
+      )}
+
+      {state.phase === 'chapter7_war' && (
+        <div className="space-y-5">
+          <ChapterHeader number={7} title="War and Conquest" />
+          <WarTask onComplete={(wins) => next('chapter7_end', { warBattlesWon: wins, power: Math.min(100, state.power + 6) })} />
+        </div>
+      )}
+
+      {state.phase === 'chapter7_end' && (
+        <div className="space-y-5">
+          <ChapterHeader number={7} title="War and Conquest" />
+          <NarrativeBox lines={[
+            `Fronts secured: ${state.warBattlesWon.join(', ') || 'none'}.`,
+            'RICCI: You do not merely command — you conquer.',
+            'Next, we stabilize with business.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter8_intro')} label="Begin Chapter 8" />
+        </div>
+      )}
+
+      {/* ─── CHAPTER 8: BUSINESS — ALL'S GOOD. ─────────────────────────────── */}
+      {state.phase === 'chapter8_intro' && (
+        <div className="space-y-5">
+          <ChapterHeader number={8} title="Business — All's Good." />
+          <NarrativeBox lines={[
+            'RICCI: Business is the bloodstream of power.',
+            'Violence takes cities. Cash keeps them.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter8_business')} label="Start Ventures" />
+        </div>
+      )}
+
+      {state.phase === 'chapter8_business' && (
+        <div className="space-y-5">
+          <ChapterHeader number={8} title="Business — All's Good." />
+          <BusinessTask onComplete={(addedWealth, businesses) => next('chapter8_end', { wealth: Math.min(100, state.wealth + addedWealth), businessesStarted: businesses })} />
+        </div>
+      )}
+
+      {state.phase === 'chapter8_end' && (
+        <div className="space-y-5">
+          <ChapterHeader number={8} title="Business — All's Good." />
+          <NarrativeBox lines={[
+            `Ventures launched: ${state.businessesStarted.join(', ') || 'none'}.`,
+            'RICCI: Good money, strategic money — that is how empires survive.',
+            'Now I will give you a head start.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter9_intro')} label="Begin Chapter 9" />
+        </div>
+      )}
+
+      {/* ─── CHAPTER 9: A HEAD START TO YOUR GAME ───────────────────────────── */}
+      {state.phase === 'chapter9_intro' && (
+        <div className="space-y-5">
+          <ChapterHeader number={9} title="A head start to your game." />
+          <NarrativeBox lines={[
+            'RICCI: Before true play, choose your starter edge.',
+            'Pick one package — momentum matters.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter9_boosts')} label="Choose Head Start" />
+        </div>
+      )}
+
+      {state.phase === 'chapter9_boosts' && (
+        <div className="space-y-5">
+          <ChapterHeader number={9} title="A head start to your game." />
+          <div className="space-y-2">
+            <ChoiceButton
+              label="Starter A: War Chest (+20 Wealth)"
+              onClick={() => next('chapter9_end', { wealth: Math.min(100, state.wealth + 20), starterPackage: 'War Chest' })}
+            />
+            <ChoiceButton
+              label="Starter B: Veteran Captains (+4 Army)"
+              onClick={() => next('chapter9_end', { army: state.army + 4, starterPackage: 'Veteran Captains' })}
+            />
+            <ChoiceButton
+              label="Starter C: Political Cover (+8 Loyalty with Ricci)"
+              variant="success"
+              onClick={() => next('chapter9_end', { loyalty: { ...state.loyalty, 'Francesco Ricci': state.loyalty['Francesco Ricci'] + 8 }, starterPackage: 'Political Cover' })}
+            />
+          </div>
+        </div>
+      )}
+
+      {state.phase === 'chapter9_end' && (
+        <div className="space-y-5">
+          <ChapterHeader number={9} title="A head start to your game." />
+          <NarrativeBox lines={[
+            `Starter selected: ${state.starterPackage ?? 'None'}.`,
+            'RICCI: Good. You enter the board with an edge.',
+            'Last lesson: try to beat the boss.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter10_intro')} label="Begin Chapter 10" />
+        </div>
+      )}
+
+      {/* ─── CHAPTER 10: TRY TO BEAT THE BOSS ───────────────────────────────── */}
+      {state.phase === 'chapter10_intro' && (
+        <div className="space-y-5">
+          <ChapterHeader number={10} title="Try to beat the boss." />
+          <NarrativeBox lines={[
+            'RICCI: This is your final trial.',
+            'One decision. One outcome. Show me what kind of consigliere you are.',
+          ]} />
+          <ContinueButton onClick={() => next('chapter10_boss')} label="Face the Boss" />
+        </div>
+      )}
+
+      {state.phase === 'chapter10_boss' && (
+        <div className="space-y-5">
+          <ChapterHeader number={10} title="Try to beat the boss." />
+          <BossTask onComplete={(result) => next('chapter10_end', { bossOutcome: result })} />
+        </div>
+      )}
+
+      {state.phase === 'chapter10_end' && (
+        <div className="space-y-5">
+          <ChapterHeader number={10} title="Try to beat the boss." />
+          <NarrativeBox lines={[
+            state.bossOutcome === 'won'
+              ? 'RICCI: Magnificent. You beat the boss through alliances, timing, and discipline.'
+              : 'RICCI: You held your ground, but the boss remains. Learn, adapt, return stronger.',
+            'Tutorial run complete. The table is set for your real campaign.',
+          ]} />
           <ContinueButton onClick={() => next('done')} label="Complete Tutorial" />
         </div>
       )}
@@ -908,7 +1453,7 @@ export default function TutorialScreen() {
           <span className="material-symbols-outlined text-6xl text-[#ffb4ac]">military_tech</span>
           <div>
             <h2 className="font-headline text-3xl text-[#ffb4ac]">Tutorial Complete</h2>
-            <p className="font-label text-xs text-gray-400 uppercase tracking-widest mt-2">You are ready to lead, Consigliere.</p>
+            <p className="font-label text-xs text-gray-400 uppercase tracking-widest mt-2">You are ready to lead, Consigliere — Chapters 0 to 10 complete.</p>
           </div>
           <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
             <button
@@ -918,7 +1463,27 @@ export default function TutorialScreen() {
               Command Center
             </button>
             <button
-              onClick={() => setState((s) => ({ ...s, phase: 'chapter0', power: 10, wealth: 30, army: 0, familiarity: { 'Francesco Ricci': 0 }, loyalty: { 'Francesco Ricci': 50 }, characters: ['Francesco Ricci'], objectiveTotal: 0, completedObjectives: [], mayorTries: 0 }))}
+              onClick={() => setState((s) => ({
+                ...s,
+                phase: 'chapter0',
+                power: 10,
+                wealth: 30,
+                army: 0,
+                familiarity: { 'Francesco Ricci': 0 },
+                loyalty: { 'Francesco Ricci': 50 },
+                characters: ['Francesco Ricci'],
+                objectiveTotal: 0,
+                completedObjectives: [],
+                mayorTries: 0,
+                ricciFamiliarityBonus: 0,
+                recruitedTypes: [],
+                relationshipMoves: [],
+                regionsControlled: [],
+                warBattlesWon: [],
+                businessesStarted: [],
+                starterPackage: null,
+                bossOutcome: 'pending',
+              }))}
               className="py-3 border border-[#ffb4ac]/20 text-[#ffb4ac] font-label text-[10px] uppercase tracking-widest hover:bg-[#ffb4ac]/5 transition-all"
             >
               Replay
