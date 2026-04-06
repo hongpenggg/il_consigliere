@@ -50,6 +50,85 @@ export interface StoryEvent {
   dialogue?: string
 }
 
+export interface StoryFactionState {
+  familyLoyalty: number
+  donTrust: number
+  rivalTension: number
+  rivalRespect: number
+  commissionStanding: number
+  cityHallInfluence: number
+  cityHallExposure: number
+  lawHeat: number
+  notoriety: number
+  streetFear: number
+  streetGoodwill: number
+}
+
+export interface StoryResourceState {
+  cash: number
+  racketsActive: number
+  racketsCompromised: number
+  soldiersAvailable: number
+  soldiersUnavailable: number
+  favorsOwed: string[]
+  favorsHeld: string[]
+}
+
+export interface StoryPhilosophyState {
+  oldCodeVsNewBlood: number
+  violenceVsPolitics: number
+  familyFirstVsEmpireFirst: number
+  honorVsPragmatism: number
+}
+
+export interface StoryWorldState {
+  city: 'Chicago' | 'New York' | 'Havana'
+  year: number
+  season: 'Spring' | 'Summer' | 'Fall' | 'Winter'
+  factions: StoryFactionState
+  resources: StoryResourceState
+  philosophy: StoryPhilosophyState
+}
+
+export interface StoryStepDelta {
+  player?: Partial<PlayerStats>
+  factions?: Partial<StoryFactionState>
+  resources?: Partial<Omit<StoryResourceState, 'favorsOwed' | 'favorsHeld'>>
+  addFavorsOwed?: string[]
+  resolveFavorsOwed?: string[]
+  addFavorsHeld?: string[]
+  spendFavorsHeld?: string[]
+  philosophy?: Partial<StoryPhilosophyState>
+}
+
+export interface StoryChoiceOption {
+  id: 'A' | 'B' | 'C' | 'D'
+  text: string
+  likelyEffect: string
+  delta: StoryStepDelta
+}
+
+export interface StoryChapterScene {
+  chapter: number
+  week: number
+  sceneHeader: {
+    location: string
+    present: string[]
+    stakes: string
+    leverage: string
+  }
+  brief: {
+    known: string[]
+    suspect: string[]
+    unknown: string[]
+  }
+  body: string[]
+  npcName: string
+  npcDialogue: string
+  options: StoryChoiceOption[]
+  delayedThread: string
+}
+
 // ─── Family ──────────────────────────────────────────────────────────────────
 
 export interface FamilyMember {

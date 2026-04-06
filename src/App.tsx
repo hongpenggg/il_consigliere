@@ -1,7 +1,7 @@
 import { lazy, Suspense, useEffect, useRef } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
-import { useSupabaseAuth, useGameInstance } from '@/hooks/useSupabase'
+import { useSupabaseAuth, useGameInstance, useUserProgress } from '@/hooks/useSupabase'
 import { SideNav } from '@/components/SideNav'
 import TopBar from '@/components/TopBar'
 import type { PlayerStats } from '@/types'
@@ -20,6 +20,7 @@ const DiplomacyScreen = lazy(() => import('@/screens/DiplomacyScreen'))
 const TutorialScreen  = lazy(() => import('@/screens/TutorialScreen'))
 
 const SESSION_KEY = 'il_consigliere_player'
+const PROGRESS_SESSION_KEY = 'il_consigliere_progress'
 
 // ─── Loading fallback ─────────────────────────────────────────────────────────
 function GameLoader() {
@@ -51,6 +52,7 @@ function GameLayout({ children }: { children: React.ReactNode }) {
 function RequirePlayer({ children }: { children: React.ReactNode }) {
   const player = useGameStore((s) => s.player)
   const setPlayer = useGameStore((s) => s.setPlayer)
+  const hydrateProgress = useGameStore((s) => s.hydrateProgress)
   const location = useLocation()
 
   if (!player) {
@@ -59,6 +61,10 @@ function RequirePlayer({ children }: { children: React.ReactNode }) {
       if (saved) {
         const parsed = JSON.parse(saved) as PlayerStats
         setPlayer(parsed)
+        const savedProgress = sessionStorage.getItem(PROGRESS_SESSION_KEY)
+        if (savedProgress) {
+          hydrateProgress(JSON.parse(savedProgress) as Record<string, unknown>)
+        }
         return <>{children}</>
       }
     } catch {
@@ -79,6 +85,31 @@ function PlayerPersistence() {
       sessionStorage.removeItem(SESSION_KEY)
     }
   }, [player])
+  return null
+}
+
+function ProgressPersistence() {
+  const tutorialCompleted = useGameStore((s) => s.tutorialCompleted)
+  const tutorialPhase = useGameStore((s) => s.tutorialPhase)
+  const storyModeStarted = useGameStore((s) => s.storyModeStarted)
+  const storyChapter = useGameStore((s) => s.storyChapter)
+  const storyStep = useGameStore((s) => s.storyStep)
+  const storyPath = useGameStore((s) => s.storyPath)
+  const storyEnding = useGameStore((s) => s.storyEnding)
+  const storyWorld = useGameStore((s) => s.storyWorld)
+
+  useEffect(() => {
+    sessionStorage.setItem(PROGRESS_SESSION_KEY, JSON.stringify({
+      tutorialCompleted,
+      tutorialPhase,
+      storyModeStarted,
+      storyChapter,
+      storyStep,
+      storyPath,
+      storyEnding,
+      storyWorld,
+    }))
+  }, [tutorialCompleted, tutorialPhase, storyModeStarted, storyChapter, storyStep, storyPath, storyEnding, storyWorld])
   return null
 }
 
@@ -119,16 +150,18 @@ function InstanceRestorer() {
   const instanceChecked    = useGameStore((s) => s.instanceChecked)
   const setInstanceChecked = useGameStore((s) => s.setInstanceChecked)
   const { loadInstance }   = useGameInstance()
+  const { loadProgress } = useUserProgress()
   const didRun             = useRef(false)
 
   useEffect(() => {
     if (!userId || player || instanceChecked || didRun.current) return
     didRun.current = true
     void loadInstance().then((found) => {
+      void loadProgress()
       setInstanceChecked(true)
       if (!found) return
     })
-  }, [userId, player, instanceChecked, loadInstance, setInstanceChecked])
+  }, [userId, player, instanceChecked, loadInstance, loadProgress, setInstanceChecked])
 
   return null
 }
@@ -140,6 +173,7 @@ export default function App() {
   return (
     <>
       <PlayerPersistence />
+      <ProgressPersistence />
       <SupabaseInstancePersistence />
       <InstanceRestorer />
       <Suspense fallback={<GameLoader />}>

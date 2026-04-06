@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { PlayerStats, StoryEvent, FamilyMember, Territory, LedgerEntry, IntelReport, GameSave } from '@/types'
+import type { PlayerStats, StoryEvent, FamilyMember, Territory, LedgerEntry, IntelReport, GameSave, StoryWorldState } from '@/types'
 
 interface GameStore {
   // Player
@@ -56,6 +56,23 @@ interface GameStore {
   instanceChecked: boolean
   setInstanceChecked: (val: boolean) => void
 
+  // Tutorial + Story mode progression
+  tutorialCompleted: boolean
+  tutorialPhase: string
+  setTutorialCompleted: (val: boolean) => void
+  setTutorialPhase: (phase: string) => void
+  storyModeStarted: boolean
+  storyChapter: number
+  storyStep: number
+  storyPath: string[]
+  storyEnding: string | null
+  storyWorld: StoryWorldState
+  startStoryMode: () => void
+  advanceStory: (choiceId: string, nextChapter: number, ending?: string | null) => void
+  resetStoryMode: () => void
+  setStoryWorld: (world: StoryWorldState) => void
+  hydrateProgress: (snapshot: Partial<Pick<GameStore, 'tutorialCompleted' | 'tutorialPhase' | 'storyModeStarted' | 'storyChapter' | 'storyStep' | 'storyPath' | 'storyEnding' | 'storyWorld'>>) => void
+
   // Reset
   resetGame: () => void
 }
@@ -76,6 +93,40 @@ const DEFAULT_FAMILY: FamilyMember[] = [
   { id: 'f3', name: 'Carlo Esposito',  role: 'Enforcer',              loyalty: 91, familiarity: 80, status: 'active' },
   { id: 'f4', name: 'Sofia Ricci',     role: 'Intelligence Officer',  loyalty: 78, familiarity: 55, status: 'active' }
 ]
+
+const DEFAULT_STORY_WORLD: StoryWorldState = {
+  city: 'New York',
+  year: 1947,
+  season: 'Fall',
+  factions: {
+    familyLoyalty: 68,
+    donTrust: 62,
+    rivalTension: 55,
+    rivalRespect: 40,
+    commissionStanding: 48,
+    cityHallInfluence: 37,
+    cityHallExposure: 34,
+    lawHeat: 46,
+    notoriety: 44,
+    streetFear: 52,
+    streetGoodwill: 33,
+  },
+  resources: {
+    cash: 1200000,
+    racketsActive: 5,
+    racketsCompromised: 1,
+    soldiersAvailable: 12,
+    soldiersUnavailable: 2,
+    favorsOwed: ['Dock foreman in Red Hook'],
+    favorsHeld: ['Ledger on Ward Boss Deluca'],
+  },
+  philosophy: {
+    oldCodeVsNewBlood: 0,
+    violenceVsPolitics: 0,
+    familyFirstVsEmpireFirst: 0,
+    honorVsPragmatism: 0,
+  },
+}
 
 export const useGameStore = create<GameStore>((set) => ({
   player: null,
@@ -138,6 +189,45 @@ export const useGameStore = create<GameStore>((set) => ({
   instanceChecked: false,
   setInstanceChecked: (val) => set({ instanceChecked: val }),
 
+  tutorialCompleted: false,
+  tutorialPhase: 'chapter0',
+  setTutorialCompleted: (val) => set({ tutorialCompleted: val }),
+  setTutorialPhase: (phase) => set({ tutorialPhase: phase }),
+
+  storyModeStarted: false,
+  storyChapter: 1,
+  storyStep: 0,
+  storyPath: [],
+  storyEnding: null,
+  storyWorld: DEFAULT_STORY_WORLD,
+  startStoryMode: () => set({ storyModeStarted: true, storyChapter: 1, storyStep: 0, storyPath: [], storyEnding: null }),
+  advanceStory: (choiceId, nextChapter, ending = null) => set((state) => ({
+    storyModeStarted: true,
+    storyChapter: nextChapter,
+    storyStep: state.storyStep + 1,
+    storyPath: [...state.storyPath, choiceId],
+    storyEnding: ending,
+  })),
+  resetStoryMode: () => set({
+    storyModeStarted: false,
+    storyChapter: 1,
+    storyStep: 0,
+    storyPath: [],
+    storyEnding: null,
+    storyWorld: DEFAULT_STORY_WORLD,
+  }),
+  setStoryWorld: (world) => set({ storyWorld: world }),
+  hydrateProgress: (snapshot) => set((state) => ({
+    tutorialCompleted: snapshot.tutorialCompleted ?? state.tutorialCompleted,
+    tutorialPhase: snapshot.tutorialPhase ?? state.tutorialPhase,
+    storyModeStarted: snapshot.storyModeStarted ?? state.storyModeStarted,
+    storyChapter: snapshot.storyChapter ?? state.storyChapter,
+    storyStep: snapshot.storyStep ?? state.storyStep,
+    storyPath: snapshot.storyPath ?? state.storyPath,
+    storyEnding: snapshot.storyEnding ?? state.storyEnding,
+    storyWorld: snapshot.storyWorld ?? state.storyWorld,
+  })),
+
   resetGame: () => set({
     player: null,
     currentEvent: null,
@@ -145,5 +235,13 @@ export const useGameStore = create<GameStore>((set) => ({
     territories: DEFAULT_TERRITORIES,
     familyMembers: DEFAULT_FAMILY,
     instanceChecked: false,
+    tutorialCompleted: false,
+    tutorialPhase: 'chapter0',
+    storyModeStarted: false,
+    storyChapter: 1,
+    storyStep: 0,
+    storyPath: [],
+    storyEnding: null,
+    storyWorld: DEFAULT_STORY_WORLD,
   })
 }))

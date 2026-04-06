@@ -1,7 +1,7 @@
 import { useEffect, useCallback } from 'react'
 import { supabase } from '@/lib/supabase'
 import { useGameStore } from '@/store/gameStore'
-import type { GameSave, PlayerStats, LedgerEntry } from '@/types'
+import type { GameSave, PlayerStats, LedgerEntry, StoryWorldState } from '@/types'
 
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
@@ -51,7 +51,19 @@ export function useSupabaseAuth() {
 // meaningful state change so it always reflects the latest progress.
 
 export function useGameInstance() {
-  const { userId, setPlayer } = useGameStore()
+  const {
+    userId,
+    setPlayer,
+    tutorialCompleted,
+    tutorialPhase,
+    storyModeStarted,
+    storyChapter,
+    storyStep,
+    storyPath,
+    storyEnding,
+    storyWorld,
+    hydrateProgress,
+  } = useGameStore()
 
   /** Write (or overwrite) the current player snapshot to Supabase. */
   const saveInstance = useCallback(async (stats: PlayerStats) => {
@@ -60,6 +72,16 @@ export function useGameInstance() {
       {
         user_id:      userId,
         player_stats: stats as unknown as Record<string, unknown>,
+        progress_snapshot: {
+          tutorialCompleted,
+          tutorialPhase,
+          storyModeStarted,
+          storyChapter,
+          storyStep,
+          storyPath,
+          storyEnding,
+          storyWorld,
+        },
         updated_at:   new Date().toISOString(),
         status:       'active',
       },
@@ -69,14 +91,14 @@ export function useGameInstance() {
     if (error) {
       console.error('Failed to save game instance:', error.message)
     }
-  }, [userId])
+  }, [userId, tutorialCompleted, tutorialPhase, storyModeStarted, storyChapter, storyStep, storyPath, storyEnding, storyWorld])
 
   /** Fetch the most recent open instance for this user. Returns true if found. */
   const loadInstance = useCallback(async (): Promise<boolean> => {
     if (!userId) return false
     const { data, error } = await supabase
       .from('game_instances')
-      .select('player_stats')
+      .select('player_stats, progress_snapshot')
       .eq('user_id', userId)
       .eq('status', 'active')
       .order('updated_at', { ascending: false })
@@ -88,10 +110,23 @@ export function useGameInstance() {
     const stats = data.player_stats as unknown as PlayerStats
     if (stats?.id) {
       setPlayer(stats)
+      const progress = data.progress_snapshot as Record<string, unknown> | null
+      if (progress) {
+        hydrateProgress({
+          tutorialCompleted: progress.tutorialCompleted as boolean | undefined,
+          tutorialPhase: progress.tutorialPhase as string | undefined,
+          storyModeStarted: progress.storyModeStarted as boolean | undefined,
+          storyChapter: progress.storyChapter as number | undefined,
+          storyStep: progress.storyStep as number | undefined,
+          storyPath: progress.storyPath as string[] | undefined,
+          storyEnding: progress.storyEnding as string | null | undefined,
+          storyWorld: progress.storyWorld as StoryWorldState | undefined,
+        })
+      }
       return true
     }
     return false
-  }, [userId, setPlayer])
+  }, [userId, setPlayer, hydrateProgress])
 
   /** Mark the instance as concluded (e.g. on game-over / conclude screen). */
   const concludeInstance = useCallback(async () => {
@@ -104,6 +139,121 @@ export function useGameInstance() {
   }, [userId])
 
   return { saveInstance, loadInstance, concludeInstance }
+}
+
+// ─── User Progress ─────────────────────────────────────────────────────────────
+
+export function useUserProgress() {
+  const {
+    userId,
+    player,
+    tutorialCompleted,
+    tutorialPhase,
+    storyModeStarted,
+    storyChapter,
+    storyStep,
+    storyPath,
+    storyEnding,
+    storyWorld,
+    hydrateProgress,
+  } = useGameStore()
+
+  const saveProgress = useCallback(async (overrides?: {
+    tutorialCompleted?: boolean
+    tutorialPhase?: string
+    storyModeStarted?: boolean
+    storyChapter?: number
+    storyStep?: number
+    storyPath?: string[]
+    storyEnding?: string | null
+    storyWorld?: StoryWorldState
+    player?: PlayerStats | null
+  }) => {
+    if (!userId) return
+    const effectivePlayer = overrides?.player ?? player
+    await supabase.from('user_progress').upsert({
+      user_id: userId,
+      current_chapter: overrides?.storyChapter ?? storyChapter,
+      total_play_time: 0,
+      last_active: new Date().toISOString(),
+      tutorial_completed: overrides?.tutorialCompleted ?? tutorialCompleted,
+      tutorial_phase: overrides?.tutorialPhase ?? tutorialPhase,
+      story_mode_started: overrides?.storyModeStarted ?? storyModeStarted,
+      story_chapter: overrides?.storyChapter ?? storyChapter,
+      story_step: overrides?.storyStep ?? storyStep,
+      story_path: overrides?.storyPath ?? storyPath,
+      story_ending: overrides?.storyEnding ?? storyEnding,
+      story_world: (overrides?.storyWorld ?? storyWorld) as unknown as Record<string, unknown>,
+      resource_snapshot: (effectivePlayer ?? null) as unknown as Record<string, unknown> | null,
+    }, { onConflict: 'user_id' })
+  }, [
+    userId,
+    player,
+    tutorialCompleted,
+    tutorialPhase,
+    storyModeStarted,
+    storyChapter,
+    storyStep,
+    storyPath,
+    storyEnding,
+    storyWorld,
+  ])
+
+  const loadProgress = useCallback(async () => {
+    if (!userId) return false
+    const { data, error } = await supabase
+      .from('user_progress')
+      .select('tutorial_completed, tutorial_phase, story_mode_started, story_chapter, story_step, story_path, story_ending, story_world')
+      .eq('user_id', userId)
+      .maybeSingle()
+    if (error || !data) return false
+    hydrateProgress({
+      tutorialCompleted: (data.tutorial_completed as boolean | null) ?? false,
+      tutorialPhase: (data.tutorial_phase as string | null) ?? 'chapter0',
+      storyModeStarted: (data.story_mode_started as boolean | null) ?? false,
+      storyChapter: (data.story_chapter as number | null) ?? 1,
+      storyStep: (data.story_step as number | null) ?? 0,
+      storyPath: (data.story_path as string[] | null) ?? [],
+      storyEnding: (data.story_ending as string | null) ?? null,
+      storyWorld: (data.story_world as StoryWorldState | null) ?? undefined,
+    })
+    return true
+  }, [userId, hydrateProgress])
+
+  const trackStoryStep = useCallback(async (params: {
+    chapter: number
+    content: string
+    choiceId: string
+    choiceText: string
+    choiceLabel: string
+    nextChapter: number
+    ending?: string | null
+    playerAfterStep: PlayerStats | null
+    worldAfterStep: StoryWorldState
+    storyPathAfterStep: string[]
+    storyStepAfterStep: number
+  }) => {
+    if (!userId) return
+    await supabase.from('story_events').insert({
+      user_id: userId,
+      content: `${params.content}\n\nChoice: ${params.choiceText}`,
+      choices: [{ id: params.choiceId, text: params.choiceText, label: params.choiceLabel }],
+      chapter: params.chapter,
+      speaker: 'Command Center',
+      dialogue: params.ending ? `Ending trajectory: ${params.ending}` : null,
+    })
+    await saveProgress({
+      storyModeStarted: true,
+      storyChapter: params.nextChapter,
+      storyStep: params.storyStepAfterStep,
+      storyPath: params.storyPathAfterStep,
+      storyEnding: params.ending ?? null,
+      storyWorld: params.worldAfterStep,
+      player: params.playerAfterStep,
+    })
+  }, [userId, saveProgress])
+
+  return { saveProgress, loadProgress, trackStoryStep }
 }
 
 // ─── Saves ────────────────────────────────────────────────────────────────────

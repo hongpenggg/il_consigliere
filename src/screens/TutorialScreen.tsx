@@ -2,9 +2,10 @@
 // Interactive tutorial — mirrors the Python game's Chapters 0–10.
 // Each chapter presents narrative text, choices, and mini-tasks.
 
-import { useState, useRef, useCallback } from 'react'
+import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
+import { useUserProgress } from '@/hooks/useSupabase'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -770,12 +771,17 @@ function ChapterHeader({ number, title }: { number: number; title: string }) {
 
 export default function TutorialScreen() {
   const player = useGameStore((s) => s.player)
+  const tutorialCompleted = useGameStore((s) => s.tutorialCompleted)
+  const tutorialPhase = useGameStore((s) => s.tutorialPhase)
+  const setTutorialCompleted = useGameStore((s) => s.setTutorialCompleted)
+  const setTutorialPhase = useGameStore((s) => s.setTutorialPhase)
   const navigate = useNavigate()
+  const { saveProgress } = useUserProgress()
   const name = player?.name ?? 'Signore'
   const family = player?.familyName ?? 'your family'
 
-  const [state, setState] = useState<TutorialState>({
-    phase: 'chapter0',
+  const createInitialState = useCallback((phase: Phase): TutorialState => ({
+    phase,
     power: 10,
     wealth: 30,
     army: 0,
@@ -793,13 +799,35 @@ export default function TutorialScreen() {
     businessesStarted: [],
     starterPackage: null,
     bossOutcome: 'pending',
-  })
+  }), [])
+
+  const [state, setState] = useState<TutorialState>(() => createInitialState(
+    tutorialCompleted ? 'done' : ((tutorialPhase as Phase) || 'chapter0')
+  ))
 
   const [mayorChoice, setMayorChoice] = useState<1 | 2 | null>(null)
 
   const next = useCallback((phase: Phase, patch?: Partial<TutorialState>) => {
     setState((s) => ({ ...s, phase, ...patch }))
   }, [])
+
+  useEffect(() => {
+    setTutorialPhase(state.phase)
+    if (state.phase === 'done' && !tutorialCompleted) {
+      setTutorialCompleted(true)
+    }
+    void saveProgress({
+      tutorialPhase: state.phase,
+      tutorialCompleted: state.phase === 'done' ? true : tutorialCompleted,
+    })
+  }, [state.phase, tutorialCompleted, setTutorialCompleted, setTutorialPhase, saveProgress])
+
+  useEffect(() => {
+    const desiredPhase: Phase = tutorialCompleted ? 'done' : ((tutorialPhase as Phase) || 'chapter0')
+    if (desiredPhase !== state.phase) {
+      setState((s) => ({ ...s, phase: desiredPhase }))
+    }
+  }, [tutorialCompleted, tutorialPhase, state.phase])
 
   // Chapter progress bar value
   const CHAPTER_ORDER: Phase[] = [
@@ -1473,27 +1501,12 @@ export default function TutorialScreen() {
               Command Center
             </button>
             <button
-              onClick={() => setState((s) => ({
-                ...s,
-                phase: 'chapter0',
-                power: 10,
-                wealth: 30,
-                army: 0,
-                familiarity: { 'Francesco Ricci': 0 },
-                loyalty: { 'Francesco Ricci': 50 },
-                characters: ['Francesco Ricci'],
-                objectiveTotal: 0,
-                completedObjectives: [],
-                mayorTries: 0,
-                ricciFamiliarityBonus: 0,
-                recruitedTypes: [],
-                relationshipMoves: [],
-                regionsControlled: [],
-                warBattlesWon: [],
-                businessesStarted: [],
-                starterPackage: null,
-                bossOutcome: 'pending',
-              }))}
+              onClick={() => {
+                setTutorialCompleted(false)
+                setTutorialPhase('chapter0')
+                setState(createInitialState('chapter0'))
+                void saveProgress({ tutorialCompleted: false, tutorialPhase: 'chapter0' })
+              }}
               className="py-3 border border-[#ffb4ac]/20 text-[#ffb4ac] font-label text-[10px] uppercase tracking-widest hover:bg-[#ffb4ac]/5 transition-all"
             >
               Replay
