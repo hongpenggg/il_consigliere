@@ -1,6 +1,7 @@
 import type { StoryChapterScene } from '@/types'
 
-const NEXT = (chapter: number) => Math.min(20, chapter + 1)
+export const MAX_STORY_CHAPTERS = 20
+const NEXT = (chapter: number) => Math.min(MAX_STORY_CHAPTERS, chapter + 1)
 
 export const STORY_MODE_CHAPTERS: StoryChapterScene[] = [
   {

@@ -171,7 +171,7 @@ export function useUserProgress() {
   }) => {
     if (!userId) return
     const effectivePlayer = overrides?.player ?? player
-    await supabase.from('user_progress').upsert({
+    const { error } = await supabase.from('user_progress').upsert({
       user_id: userId,
       current_chapter: overrides?.storyChapter ?? storyChapter,
       total_play_time: 0,
@@ -186,6 +186,9 @@ export function useUserProgress() {
       story_world: (overrides?.storyWorld ?? storyWorld) as unknown as Record<string, unknown>,
       resource_snapshot: (effectivePlayer ?? null) as unknown as Record<string, unknown> | null,
     }, { onConflict: 'user_id' })
+    if (error) {
+      console.error('Failed to save user progress:', error.message)
+    }
   }, [
     userId,
     player,

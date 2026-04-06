@@ -81,10 +81,15 @@ function mergeWorld(world: StoryWorldState, choice: StoryChoiceOption) {
   }
 }
 
-function worldFromPlayerTerritory(territory: string | undefined): Pick<StoryWorldState, 'world' | 'city'> {
-  if (territory === 'usa') return { world: 'USA', city: 'New York' }
-  if (territory === 'uk') return { world: 'UK', city: 'London' }
-  return { world: 'Italy', city: 'Sicily' }
+function worldFromPlayerTerritory(territory: string | undefined, playerId?: string): Pick<StoryWorldState, 'world' | 'city'> {
+  const mapping: Record<string, Pick<StoryWorldState, 'world' | 'city'>> = {
+    italy: { world: 'Italy', city: 'Sicily' },
+    usa: { world: 'USA', city: 'New York' },
+    uk: { world: 'UK', city: 'London' },
+  }
+  const resolved = territory ? mapping[territory] : undefined
+  void playerId
+  return resolved ?? mapping.italy
 }
 
 function meter(value: number) {
@@ -114,7 +119,7 @@ export default function CommandScreen() {
   const chapter = useMemo(() => getStoryChapter(storyChapter), [storyChapter])
   const world = useMemo<StoryWorldState>(() => {
     if (storyModeStarted) return storyWorld
-    const inferred = worldFromPlayerTerritory(player?.territory)
+    const inferred = worldFromPlayerTerritory(player?.territory, player?.id)
     return { ...storyWorld, ...inferred }
   }, [storyModeStarted, storyWorld, player?.territory])
 

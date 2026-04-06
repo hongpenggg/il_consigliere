@@ -804,6 +804,7 @@ export default function TutorialScreen() {
   const [state, setState] = useState<TutorialState>(() => createInitialState(
     tutorialCompleted ? 'done' : ((tutorialPhase as Phase) || 'chapter0')
   ))
+  const lastPersisted = useRef<{ phase: Phase; completed: boolean } | null>(null)
 
   const [mayorChoice, setMayorChoice] = useState<1 | 2 | null>(null)
 
@@ -812,14 +813,15 @@ export default function TutorialScreen() {
   }, [])
 
   useEffect(() => {
+    const completed = state.phase === 'done' ? true : tutorialCompleted
+    const previous = lastPersisted.current
+    if (previous?.phase === state.phase && previous.completed === completed) return
     setTutorialPhase(state.phase)
     if (state.phase === 'done' && !tutorialCompleted) {
       setTutorialCompleted(true)
     }
-    void saveProgress({
-      tutorialPhase: state.phase,
-      tutorialCompleted: state.phase === 'done' ? true : tutorialCompleted,
-    })
+    lastPersisted.current = { phase: state.phase, completed }
+    void saveProgress({ tutorialPhase: state.phase, tutorialCompleted: completed })
   }, [state.phase, tutorialCompleted, setTutorialCompleted, setTutorialPhase, saveProgress])
 
   useEffect(() => {

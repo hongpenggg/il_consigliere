@@ -1,5 +1,5 @@
 -- ============================================================
--- IL CONSIGLIERE — Seed public tables for existing auth users
+-- IL CONSIGLIERE - Seed public tables for existing auth users
 -- Run in Supabase SQL Editor after migrations.
 -- Idempotent: safe to re-run.
 -- ============================================================
