@@ -95,7 +95,8 @@ const DEFAULT_FAMILY: FamilyMember[] = [
 ]
 
 const DEFAULT_STORY_WORLD: StoryWorldState = {
-  city: 'New York',
+  world: 'Italy',
+  city: 'Sicily',
   year: 1947,
   season: 'Fall',
   factions: {

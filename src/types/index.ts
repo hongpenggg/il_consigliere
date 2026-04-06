@@ -82,7 +82,8 @@ export interface StoryPhilosophyState {
 }
 
 export interface StoryWorldState {
-  city: 'Chicago' | 'New York' | 'Havana'
+  world: 'Italy' | 'USA' | 'UK'
+  city: 'Sicily' | 'Naples' | 'Rome' | 'New York' | 'Chicago' | 'Birmingham' | 'London'
   year: number
   season: 'Spring' | 'Summer' | 'Fall' | 'Winter'
   factions: StoryFactionState
@@ -105,6 +106,8 @@ export interface StoryChoiceOption {
   id: 'A' | 'B' | 'C' | 'D'
   text: string
   likelyEffect: string
+  nextChapter: number
+  ending?: string | null
   delta: StoryStepDelta
 }
 
