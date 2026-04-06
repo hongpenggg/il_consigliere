@@ -106,7 +106,6 @@ function SupabaseInstancePersistence() {
       if (saveTimeoutRef.current) {
         clearTimeout(saveTimeoutRef.current)
       }
-      lastSaved.current = null
     }
   }, [userId, player, saveInstance])
 
