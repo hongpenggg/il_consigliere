@@ -694,7 +694,7 @@ function BusinessTask({ onComplete }: { onComplete: (addedWealth: number, busine
   const entries = [
     { id: 'rob', label: "Rob a Bank [type 'rob']", gain: 10 },
     { id: 'heist', label: "Plan a Louvre Heist [type 'heist']", gain: 20 },
-    { id: 'vehicle', label: "Stop a Bank Armoured Vehicle [type 'vehicle']", gain: 10 },
+    { id: 'vehicle', label: "Stop a Bank Armored Vehicle [type 'vehicle']", gain: 10 },
     { id: 'casino_royale', label: "Start a Casino [type 'casino royale']", gain: 40 },
     { id: 'lux_the_club', label: "Start a Brothel [type 'lux the club']", gain: 30 },
     { id: 'al_capone', label: "Start a Racketeering Front [type 'al capone']", gain: 25 },
@@ -1191,7 +1191,7 @@ export default function TutorialScreen() {
             'RICCI: You\'re truly on your way to greatness!',
             '',
             'RICCI: Wealth is not only your personal money. Family wealth includes the combined strength of all members.',
-            'RICCI: In real play, choices have costs and requirements. Some moves are blocked if your wealth, power, or familiarity are too low.',
+            'RICCI: In real play, choices have costs and requirements. Some moves are blocked if your wealth, power, or family loyalty are too low.',
             'RICCI: You are usually limited to one choice per turn — be economical.',
             '',
             `RICCI: The ${family} stands stronger today because of your decisions. Continue building your empire — the real game begins now.`,
