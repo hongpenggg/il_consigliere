@@ -3,6 +3,7 @@
 
 alter table if exists public.user_progress
   add column if not exists current_chapter integer,
+  -- Reserved for future play-time tracking from the app client.
   add column if not exists total_play_time integer,
   add column if not exists last_active timestamptz;
 

@@ -228,10 +228,10 @@ export function useUserProgress() {
     const shouldRetryBoth = !!progressResult.error && !!instanceResult.error && !!instancePayload
     const shouldRetryProgressOnly = !!progressResult.error && !instanceResult.error
     const shouldRetryInstanceOnly = !progressResult.error && !!instanceResult.error && !!instancePayload
-    if (shouldRetryBoth && instancePayload) {
+    if (shouldRetryBoth) {
       const [progressRetry, instanceRetry] = await Promise.all([
         supabase.from('user_progress').upsert(progressPayload, { onConflict: 'user_id' }),
-        supabase.from('game_instances').upsert(instancePayload, { onConflict: 'user_id' }),
+        supabase.from('game_instances').upsert(instancePayload as Record<string, unknown>, { onConflict: 'user_id' }),
       ])
       if (progressRetry.error) {
         console.error('Failed to save user progress (attempt 2):', progressRetry.error.message)
@@ -246,8 +246,8 @@ export function useUserProgress() {
         console.error('Failed to save user progress (attempt 2):', retry.error.message)
       }
     }
-    if (shouldRetryInstanceOnly && instancePayload) {
-      const retry = await supabase.from('game_instances').upsert(instancePayload, { onConflict: 'user_id' })
+    if (shouldRetryInstanceOnly) {
+      const retry = await supabase.from('game_instances').upsert(instancePayload as Record<string, unknown>, { onConflict: 'user_id' })
       if (retry.error) {
         console.error('Failed to save game instance from progress (attempt 2):', retry.error.message)
       }
