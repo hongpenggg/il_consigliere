@@ -89,6 +89,8 @@ export type Database = {
           content: string
           choices: Record<string, unknown>[]
           chapter: number
+          speaker: string | null
+          dialogue: string | null
           created_at: string
         }
       }

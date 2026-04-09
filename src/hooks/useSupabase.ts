@@ -171,23 +171,56 @@ export function useUserProgress() {
   }) => {
     if (!userId) return
     const effectivePlayer = overrides?.player ?? player
+    const nextTutorialCompleted = overrides?.tutorialCompleted ?? tutorialCompleted
+    const nextTutorialPhase = overrides?.tutorialPhase ?? tutorialPhase
+    const nextStoryModeStarted = overrides?.storyModeStarted ?? storyModeStarted
+    const nextStoryChapter = overrides?.storyChapter ?? storyChapter
+    const nextStoryStep = overrides?.storyStep ?? storyStep
+    const nextStoryPath = overrides?.storyPath ?? storyPath
+    const nextStoryEnding = overrides?.storyEnding ?? storyEnding
+    const nextStoryWorld = overrides?.storyWorld ?? storyWorld
     const { error } = await supabase.from('user_progress').upsert({
       user_id: userId,
-      current_chapter: overrides?.storyChapter ?? storyChapter,
+      current_chapter: nextStoryChapter,
       total_play_time: 0,
       last_active: new Date().toISOString(),
-      tutorial_completed: overrides?.tutorialCompleted ?? tutorialCompleted,
-      tutorial_phase: overrides?.tutorialPhase ?? tutorialPhase,
-      story_mode_started: overrides?.storyModeStarted ?? storyModeStarted,
-      story_chapter: overrides?.storyChapter ?? storyChapter,
-      story_step: overrides?.storyStep ?? storyStep,
-      story_path: overrides?.storyPath ?? storyPath,
-      story_ending: overrides?.storyEnding ?? storyEnding,
-      story_world: (overrides?.storyWorld ?? storyWorld) as unknown as Record<string, unknown>,
+      tutorial_completed: nextTutorialCompleted,
+      tutorial_phase: nextTutorialPhase,
+      story_mode_started: nextStoryModeStarted,
+      story_chapter: nextStoryChapter,
+      story_step: nextStoryStep,
+      story_path: nextStoryPath,
+      story_ending: nextStoryEnding,
+      story_world: nextStoryWorld as unknown as Record<string, unknown>,
       resource_snapshot: (effectivePlayer ?? null) as unknown as Record<string, unknown> | null,
     }, { onConflict: 'user_id' })
     if (error) {
       console.error('Failed to save user progress:', error.message)
+    }
+
+    if (effectivePlayer) {
+      const { error: instanceError } = await supabase.from('game_instances').upsert(
+        {
+          user_id: userId,
+          player_stats: effectivePlayer as unknown as Record<string, unknown>,
+          progress_snapshot: {
+            tutorialCompleted: nextTutorialCompleted,
+            tutorialPhase: nextTutorialPhase,
+            storyModeStarted: nextStoryModeStarted,
+            storyChapter: nextStoryChapter,
+            storyStep: nextStoryStep,
+            storyPath: nextStoryPath,
+            storyEnding: nextStoryEnding,
+            storyWorld: nextStoryWorld,
+          },
+          updated_at: new Date().toISOString(),
+          status: 'active',
+        },
+        { onConflict: 'user_id' }
+      )
+      if (instanceError) {
+        console.error('Failed to save game instance from progress:', instanceError.message)
+      }
     }
   }, [
     userId,
