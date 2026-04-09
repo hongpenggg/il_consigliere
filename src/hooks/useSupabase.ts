@@ -219,24 +219,37 @@ export function useUserProgress() {
     ])
 
     if (progressResult.error) {
-      console.error('Failed to save user progress:', progressResult.error.message)
+      console.error('Failed to save user progress (attempt 1):', progressResult.error.message)
     }
     if (instanceResult.error) {
-      console.error('Failed to save game instance from progress:', instanceResult.error.message)
+      console.error('Failed to save game instance from progress (attempt 1):', instanceResult.error.message)
     }
 
+    const shouldRetryBoth = !!progressResult.error && !!instanceResult.error && !!instancePayload
     const shouldRetryProgressOnly = !!progressResult.error && !instanceResult.error
     const shouldRetryInstanceOnly = !progressResult.error && !!instanceResult.error && !!instancePayload
+    if (shouldRetryBoth && instancePayload) {
+      const [progressRetry, instanceRetry] = await Promise.all([
+        supabase.from('user_progress').upsert(progressPayload, { onConflict: 'user_id' }),
+        supabase.from('game_instances').upsert(instancePayload, { onConflict: 'user_id' }),
+      ])
+      if (progressRetry.error) {
+        console.error('Failed to save user progress (attempt 2):', progressRetry.error.message)
+      }
+      if (instanceRetry.error) {
+        console.error('Failed to save game instance from progress (attempt 2):', instanceRetry.error.message)
+      }
+    }
     if (shouldRetryProgressOnly) {
       const retry = await supabase.from('user_progress').upsert(progressPayload, { onConflict: 'user_id' })
       if (retry.error) {
-        console.error('Retry failed for user progress save:', retry.error.message)
+        console.error('Failed to save user progress (attempt 2):', retry.error.message)
       }
     }
     if (shouldRetryInstanceOnly && instancePayload) {
       const retry = await supabase.from('game_instances').upsert(instancePayload, { onConflict: 'user_id' })
       if (retry.error) {
-        console.error('Retry failed for game instance save:', retry.error.message)
+        console.error('Failed to save game instance from progress (attempt 2):', retry.error.message)
       }
     }
   }, [
