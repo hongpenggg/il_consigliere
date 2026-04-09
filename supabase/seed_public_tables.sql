@@ -215,7 +215,8 @@ select
   jsonb_build_array(
     jsonb_build_object('id', 'A', 'text', 'Secure the docks quietly', 'label', 'Lower heat, slower gains'),
     jsonb_build_object('id', 'C', 'text', 'Escalate and intimidate rivals', 'label', 'Higher control, higher heat')
-  ), 1,
+  ),
+  1,
   now()
 from auth.users u
 where not exists (

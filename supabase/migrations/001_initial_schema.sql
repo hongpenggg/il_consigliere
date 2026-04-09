@@ -5,6 +5,7 @@
 create extension if not exists "uuid-ossp";
 create extension if not exists "pgcrypto";
 
+-- family_members
 create table if not exists public.family_members (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -16,6 +17,7 @@ create table if not exists public.family_members (
 
 create index if not exists idx_family_members_user_id on public.family_members using btree (user_id);
 
+-- ledger_entries
 create table if not exists public.ledger_entries (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -28,6 +30,7 @@ create table if not exists public.ledger_entries (
 create index if not exists idx_ledger_entries_user_id on public.ledger_entries using btree (user_id);
 create index if not exists idx_ledger_entries_created_at on public.ledger_entries using btree (created_at desc);
 
+-- saves
 create table if not exists public.saves (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -41,6 +44,7 @@ create table if not exists public.saves (
 
 create index if not exists idx_saves_user_id on public.saves using btree (user_id);
 
+-- story_events
 create table if not exists public.story_events (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -53,6 +57,7 @@ create table if not exists public.story_events (
 create index if not exists idx_story_events_user_id on public.story_events using btree (user_id);
 create index if not exists idx_story_events_created_at on public.story_events using btree (created_at desc);
 
+-- territories
 create table if not exists public.territories (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null references auth.users (id) on delete cascade,
@@ -65,6 +70,7 @@ create table if not exists public.territories (
 
 create index if not exists idx_territories_user_id on public.territories using btree (user_id);
 
+-- user_progress
 create table if not exists public.user_progress (
   id uuid primary key default uuid_generate_v4(),
   user_id uuid not null unique references auth.users (id) on delete cascade,
