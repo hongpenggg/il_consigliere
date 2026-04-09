@@ -171,23 +171,89 @@ export function useUserProgress() {
   }) => {
     if (!userId) return
     const effectivePlayer = overrides?.player ?? player
-    const { error } = await supabase.from('user_progress').upsert({
+    const nextTutorialCompleted = overrides?.tutorialCompleted ?? tutorialCompleted
+    const nextTutorialPhase = overrides?.tutorialPhase ?? tutorialPhase
+    const nextStoryModeStarted = overrides?.storyModeStarted ?? storyModeStarted
+    const nextStoryChapter = overrides?.storyChapter ?? storyChapter
+    const nextStoryStep = overrides?.storyStep ?? storyStep
+    const nextStoryPath = overrides?.storyPath ?? storyPath
+    const nextStoryEnding = overrides?.storyEnding ?? storyEnding
+    const nextStoryWorld = overrides?.storyWorld ?? storyWorld
+    const progressPayload = {
       user_id: userId,
-      current_chapter: overrides?.storyChapter ?? storyChapter,
-      total_play_time: 0,
+      current_chapter: nextStoryChapter,
       last_active: new Date().toISOString(),
-      tutorial_completed: overrides?.tutorialCompleted ?? tutorialCompleted,
-      tutorial_phase: overrides?.tutorialPhase ?? tutorialPhase,
-      story_mode_started: overrides?.storyModeStarted ?? storyModeStarted,
-      story_chapter: overrides?.storyChapter ?? storyChapter,
-      story_step: overrides?.storyStep ?? storyStep,
-      story_path: overrides?.storyPath ?? storyPath,
-      story_ending: overrides?.storyEnding ?? storyEnding,
-      story_world: (overrides?.storyWorld ?? storyWorld) as unknown as Record<string, unknown>,
+      tutorial_completed: nextTutorialCompleted,
+      tutorial_phase: nextTutorialPhase,
+      story_mode_started: nextStoryModeStarted,
+      story_chapter: nextStoryChapter,
+      story_step: nextStoryStep,
+      story_path: nextStoryPath,
+      story_ending: nextStoryEnding,
+      story_world: nextStoryWorld as unknown as Record<string, unknown>,
       resource_snapshot: (effectivePlayer ?? null) as unknown as Record<string, unknown> | null,
-    }, { onConflict: 'user_id' })
-    if (error) {
-      console.error('Failed to save user progress:', error.message)
+    }
+
+    const instancePayload = effectivePlayer ? {
+      user_id: userId,
+      player_stats: effectivePlayer as unknown as Record<string, unknown>,
+      progress_snapshot: {
+        tutorialCompleted: nextTutorialCompleted,
+        tutorialPhase: nextTutorialPhase,
+        storyModeStarted: nextStoryModeStarted,
+        storyChapter: nextStoryChapter,
+        storyStep: nextStoryStep,
+        storyPath: nextStoryPath,
+        storyEnding: nextStoryEnding,
+        storyWorld: nextStoryWorld,
+      },
+      updated_at: new Date().toISOString(),
+      status: 'active',
+    } : null
+
+    const [progressResult, instanceResult] = await Promise.all([
+      supabase.from('user_progress').upsert(progressPayload, { onConflict: 'user_id' }),
+      instancePayload
+        ? supabase.from('game_instances').upsert(instancePayload, { onConflict: 'user_id' })
+        : Promise.resolve({ data: null, error: null }),
+    ])
+
+    if (progressResult.error) {
+      console.error('Failed to save user progress (attempt 1):', progressResult.error.message)
+    }
+    if (instanceResult.error) {
+      console.error('Failed to save game instance from progress (attempt 1):', instanceResult.error.message)
+    }
+
+    const shouldRetryBoth = !!progressResult.error && !!instanceResult.error && !!instancePayload
+    const shouldRetryProgressOnly = !!progressResult.error && !instanceResult.error
+    const shouldRetryInstanceOnly = !progressResult.error && !!instanceResult.error && !!instancePayload
+    if (shouldRetryBoth) {
+      await waitBeforeRetry()
+      const [progressRetry, instanceRetry] = await Promise.all([
+        supabase.from('user_progress').upsert(progressPayload, { onConflict: 'user_id' }),
+        supabase.from('game_instances').upsert(instancePayload, { onConflict: 'user_id' }),
+      ])
+      if (progressRetry.error) {
+        console.error('Failed to save user progress (attempt 2):', progressRetry.error.message)
+      }
+      if (instanceRetry.error) {
+        console.error('Failed to save game instance from progress (attempt 2):', instanceRetry.error.message)
+      }
+    }
+    if (shouldRetryProgressOnly) {
+      await waitBeforeRetry()
+      const retry = await supabase.from('user_progress').upsert(progressPayload, { onConflict: 'user_id' })
+      if (retry.error) {
+        console.error('Failed to save user progress (attempt 2):', retry.error.message)
+      }
+    }
+    if (shouldRetryInstanceOnly) {
+      await waitBeforeRetry()
+      const retry = await supabase.from('game_instances').upsert(instancePayload, { onConflict: 'user_id' })
+      if (retry.error) {
+        console.error('Failed to save game instance from progress (attempt 2):', retry.error.message)
+      }
     }
   }, [
     userId,
@@ -346,3 +412,4 @@ export function useGameLedger() {
 
   return { loadLedger, addEntry }
 }
+    const waitBeforeRetry = () => new Promise((resolve) => setTimeout(resolve, 150))

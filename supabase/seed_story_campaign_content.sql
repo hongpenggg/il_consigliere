@@ -208,6 +208,73 @@ where not exists (
     and se.content = e.content
 );
 
+-- 3b) Massive branching scenario library (>100 entries, up to 30 chapters)
+with generated_events as (
+  select
+    idx as scenario_index,
+    ((idx - 1) / 4) + 1 as chapter,
+    (
+      'Scenario ' || lpad(idx::text, 3, '0') ||
+      ' — Session ' || (((idx - 1) / 4) + 1)::text ||
+      ': The council receives conflicting intelligence about dock access, city inspectors, and rival tribute channels. ' ||
+      'This node can require specific prior decisions depending on unlocked paths.'
+    ) as content,
+    jsonb_build_array(
+      jsonb_build_object(
+        'id', 'A',
+        'text', 'Build coalition support through negotiated concessions',
+        'label', 'Lower heat, slower but stable consolidation',
+        'requiresChoicesAny', case when idx % 7 = 0 then jsonb_build_array('B', 'C') else '[]'::jsonb end,
+        'requiresChoicesAll', case when idx % 13 = 0 then jsonb_build_array('A') else '[]'::jsonb end,
+        'unlockTags', jsonb_build_array('diplomacy', 'institutional'),
+        'nextScenarioOffset', 1
+      ),
+      jsonb_build_object(
+        'id', 'B',
+        'text', 'Pressure rivals with targeted enforcer deployments',
+        'label', 'Fast control, high retaliation and legal exposure',
+        'requiresChoicesAny', case when idx % 5 = 0 then jsonb_build_array('A', 'D') else '[]'::jsonb end,
+        'requiresChoicesAll', case when idx % 11 = 0 then jsonb_build_array('B') else '[]'::jsonb end,
+        'unlockTags', jsonb_build_array('force', 'deterrence'),
+        'nextScenarioOffset', 1
+      ),
+      jsonb_build_object(
+        'id', 'C',
+        'text', 'Trade selective intelligence to redirect investigations',
+        'label', 'Moderate gain with credibility and trust risk',
+        'requiresChoicesAny', case when idx % 3 = 0 then jsonb_build_array('A', 'B') else '[]'::jsonb end,
+        'requiresChoicesAll', case when idx % 9 = 0 then jsonb_build_array('A', 'C') else '[]'::jsonb end,
+        'unlockTags', jsonb_build_array('intel', 'deception'),
+        'nextScenarioOffset', 1
+      ),
+      jsonb_build_object(
+        'id', 'D',
+        'text', 'Pause escalation and harden audits, books, and supply chains',
+        'label', 'Risk reduction now, momentum loss later',
+        'requiresChoicesAny', case when idx % 4 = 0 then jsonb_build_array('C') else '[]'::jsonb end,
+        'requiresChoicesAll', case when idx % 10 = 0 then jsonb_build_array('B', 'D') else '[]'::jsonb end,
+        'unlockTags', jsonb_build_array('stability', 'oversight'),
+        'nextScenarioOffset', 1
+      )
+    ) as choices
+  from generate_series(1, 120) as gs(idx)
+)
+insert into public.story_events (user_id, content, choices, chapter, created_at)
+select
+  u.id,
+  ge.content,
+  ge.choices,
+  ge.chapter,
+  now() - (ge.scenario_index || ' hours')::interval
+from auth.users u
+cross join generated_events ge
+where not exists (
+  select 1
+  from public.story_events se
+  where se.user_id = u.id
+    and se.content = ge.content
+);
+
 -- 4) Realtime right-sizing recommendation:
 -- Keep realtime only where live push UX exists.
 -- Current app subscribes to: story_events, ledger_entries.
