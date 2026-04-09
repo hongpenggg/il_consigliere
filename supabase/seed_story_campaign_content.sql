@@ -161,7 +161,7 @@ cross join (
     ),
     (
       5,
-      'Chapter 5 — Intelligence confirms a planned assassination during your niece''s wedding. Cancelling the ceremony would look weak.',
+      'Chapter 5 — Intelligence confirms a planned assassination during your niece''s wedding. Canceling the ceremony would look weak.',
       jsonb_build_array(
         jsonb_build_object('id', 'A', 'text', 'Proceed with layered security and decoys', 'label', 'Prestige maintained, casualties possible'),
         jsonb_build_object('id', 'B', 'text', 'Move the ceremony to a hidden chapel', 'label', 'Safety first, gossip surge'),
