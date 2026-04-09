@@ -182,7 +182,6 @@ export function useUserProgress() {
     const { error } = await supabase.from('user_progress').upsert({
       user_id: userId,
       current_chapter: nextStoryChapter,
-      total_play_time: 0,
       last_active: new Date().toISOString(),
       tutorial_completed: nextTutorialCompleted,
       tutorial_phase: nextTutorialPhase,
