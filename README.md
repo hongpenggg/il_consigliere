@@ -48,3 +48,16 @@ VITE_SUPABASE_ANON_KEY=<YOUR_SUPABASE_ANON_KEY>
 2. Open `/auth`
 3. Click **Continue with Google**
 4. Complete Google sign-in and verify redirect back to `/`
+
+## Server-side env vars for `/api/generate`
+
+Set these in your deployment environment (and local `.env` if using Vercel dev):
+
+```bash
+OPENROUTER_API_KEY=<openrouter key>
+SUPABASE_URL=https://<YOUR_SUPABASE_PROJECT_REF>.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=<YOUR_SUPABASE_SERVICE_ROLE_KEY>
+UPSTASH_REDIS_REST_URL=<upstash redis rest url>
+UPSTASH_REDIS_REST_TOKEN=<upstash redis rest token>
+ALLOWED_ORIGIN=https://<your-vercel-domain>
+```

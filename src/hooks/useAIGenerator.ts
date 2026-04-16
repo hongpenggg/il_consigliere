@@ -1,5 +1,6 @@
 import { useCallback, useRef } from 'react'
 import { useGameStore } from '@/store/gameStore'
+import { supabase } from '@/lib/supabase'
 import type { StoryEvent, Choice } from '@/types'
 
 // ─── Types ───────────────────────────────────────────────────────────────────
@@ -38,12 +39,21 @@ export function useAIGenerator() {
       setIsGenerating(true)
 
       try {
+        const { data: { session } } = await supabase.auth.getSession()
+        const accessToken = session?.access_token
+        if (!accessToken) {
+          throw new Error('Authentication required')
+        }
+
         // ── Call our own serverless function, not OpenRouter directly ──────
         // The API key lives server-side in /api/generate.ts and is never
         // exposed to the browser.
         const response = await fetch('/api/generate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`
+          },
           body: JSON.stringify({
             playerName: player?.name ?? 'Don',
             familyName: player?.familyName ?? 'Corleone',
