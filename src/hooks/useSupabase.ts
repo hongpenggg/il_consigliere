@@ -3,28 +3,6 @@ import { supabase } from '@/lib/supabase'
 import { useGameStore } from '@/store/gameStore'
 import type { GameSave, PlayerStats, LedgerEntry, StoryWorldState } from '@/types'
 
-async function logAuditEvent(
-  userId: string | null,
-  action: string,
-  resource: string,
-  outcome: 'success' | 'failure' | 'denied',
-  metadata: Record<string, unknown> = {}
-) {
-  if (!userId) return
-  try {
-    await supabase.from('audit_log').insert({
-      user_id: userId,
-      action,
-      resource,
-      outcome,
-      metadata,
-      user_agent: navigator.userAgent,
-    })
-  } catch {
-    // Best-effort logging; never block gameplay/auth flow.
-  }
-}
-
 // ─── Auth ─────────────────────────────────────────────────────────────────────
 
 export function useSupabaseAuth() {
@@ -41,66 +19,27 @@ export function useSupabaseAuth() {
   }, [setUserId])
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const result = await supabase.auth.signInWithPassword({ email, password })
-    await logAuditEvent(
-      result.data.user?.id ?? null,
-      'auth_sign_in',
-      'supabase_auth',
-      result.error ? 'failure' : 'success'
-    )
-    return result
+    return supabase.auth.signInWithPassword({ email, password })
   }, [])
 
   const signUp = useCallback(async (email: string, password: string) => {
-    const result = await supabase.auth.signUp({ email, password })
-    await logAuditEvent(
-      result.data.user?.id ?? null,
-      'auth_sign_up',
-      'supabase_auth',
-      result.error ? 'failure' : 'success'
-    )
-    return result
+    return supabase.auth.signUp({ email, password })
   }, [])
 
   const signInWithMagicLink = useCallback(async (email: string) => {
-    const result = await supabase.auth.signInWithOtp({ email })
-    const { data: { session } } = await supabase.auth.getSession()
-    await logAuditEvent(
-      session?.user.id ?? null,
-      'auth_magic_link_request',
-      'supabase_auth',
-      result.error ? 'failure' : 'success'
-    )
-    return result
+    return supabase.auth.signInWithOtp({ email })
   }, [])
 
   const signOut = useCallback(async () => {
-    const { data: { session } } = await supabase.auth.getSession()
-    const userId = session?.user.id ?? null
-    const result = await supabase.auth.signOut()
-    await logAuditEvent(
-      userId,
-      'auth_sign_out',
-      'supabase_auth',
-      result.error ? 'failure' : 'success'
-    )
-    return result
+    return supabase.auth.signOut()
   }, [])
 
   const signInWithGoogle = useCallback(async () => {
     const redirectTo = `${window.location.origin}/`
-    const result = await supabase.auth.signInWithOAuth({
+    return supabase.auth.signInWithOAuth({
       provider: 'google',
       options: { redirectTo },
     })
-    const { data: { session } } = await supabase.auth.getSession()
-    await logAuditEvent(
-      session?.user.id ?? null,
-      'auth_google_sign_in',
-      'supabase_auth',
-      result.error ? 'failure' : 'success'
-    )
-    return result
   }, [])
 
   return { signIn, signUp, signInWithMagicLink, signInWithGoogle, signOut }
@@ -417,20 +356,13 @@ export function useGameSaves() {
     playTime: number = 0
   ) => {
     if (!userId) return
-    const { error } = await supabase.from('saves').upsert({
+    await supabase.from('saves').upsert({
       user_id:      userId,
       slot_name:    slotName,
       player_stats: playerStats as unknown as Record<string, unknown>,
       chapter,
       play_time:    playTime
     })
-    await logAuditEvent(
-      userId,
-      'game_save',
-      'saves',
-      error ? 'failure' : 'success',
-      { slotName, chapter }
-    )
     await loadSaves()
   }, [userId, loadSaves])
 

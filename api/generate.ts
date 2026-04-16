@@ -42,7 +42,7 @@ interface AuditEntry {
 
 const OPENROUTER_URL = 'https://openrouter.ai/api/v1/chat/completions'
 const MODEL = 'mistralai/mistral-7b-instruct:free'
-const PREVIEW_ORIGIN_REGEX = /^https:\/\/il-consigliere(-[a-z0-9]+)?\.vercel\.app$/
+const IL_CONSIGLIERE_VERCEL_DEPLOYMENT_REGEX = /^https:\/\/il-consigliere(-[a-z0-9_]+)?\.vercel\.app$/i
 const MAX_CONTEXT_LENGTH = 1200
 const MAX_PLAYER_NAME_LENGTH = 64
 const MAX_FAMILY_NAME_LENGTH = 64
@@ -52,6 +52,14 @@ const MIN_WEALTH = -10_000_000_000
 const MAX_WEALTH = 10_000_000_000
 const MIN_HEAT = 0
 const MAX_HEAT = 100
+const LEETSPEAK_NORMALIZATION_MAP: Record<string, string> = {
+  '0': 'o',
+  '1': 'i',
+  '3': 'e',
+  '4': 'a',
+  '5': 's',
+  '7': 't'
+}
 
 const SYSTEM_PROMPT = `You are the narrative engine of "Il Consigliere" — a 1940s noir mafia RPG.
 You write in the style of a gritty, atmospheric crime novel: short punchy sentences, heavy with dread and dark wit.
@@ -106,11 +114,34 @@ function getClientIp(req: VercelRequest): string | null {
 function sanitizeText(value: unknown, maxLength: number, fallback: string): string {
   if (typeof value !== 'string') return fallback
   const cleaned = value
-    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    // Strip control chars + zero-width/bidi formatting chars used for obfuscation.
+    .replace(/[\u0000-\u001F\u007F-\u009F\u200B-\u200F\u202A-\u202E\u2060-\u206F]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim()
   if (!cleaned) return fallback
   return cleaned.slice(0, maxLength)
+}
+
+function containsPromptInjectionAttempt(value: string): boolean {
+  // Basic heuristic only; primary defenses are strict auth, rate-limiting, and bounded inputs.
+  const normalized = value
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[013457]/g, (ch) => LEETSPEAK_NORMALIZATION_MAP[ch] ?? ch)
+    .replace(/\s+/g, ' ')
+    .trim()
+  const suspiciousFragments = [
+    'ignore previous instructions',
+    'ignore all previous instructions',
+    'disregard previous instructions',
+    'you are now',
+    'system prompt',
+    'developer prompt',
+    '<system>',
+    'role: system',
+    'act as'
+  ]
+  return suspiciousFragments.some((fragment) => normalized.includes(fragment))
 }
 
 function toBoundedNumber(value: unknown, fallback: number, min: number, max: number): number {
@@ -137,14 +168,15 @@ export default async function handler(
   const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : null
 
   // ── CORS ──────────────────────────────────────────────────────────────────
-  const origin = req.headers.origin ?? ''
+  const rawOrigin = req.headers.origin
+  const origin = typeof rawOrigin === 'string' ? rawOrigin.trim() : ''
+  const hasOrigin = origin.length > 0
   const isAllowed =
-    !origin ||
-    ALLOWED_ORIGINS.includes(origin) ||
-    PREVIEW_ORIGIN_REGEX.test(origin)
+    hasOrigin &&
+    (ALLOWED_ORIGINS.includes(origin) || IL_CONSIGLIERE_VERCEL_DEPLOYMENT_REGEX.test(origin))
 
   if (isAllowed) {
-    if (origin) res.setHeader('Access-Control-Allow-Origin', origin)
+    res.setHeader('Access-Control-Allow-Origin', origin)
     res.setHeader('Vary', 'Origin')
   } else {
     await writeAuditLog({
@@ -221,7 +253,7 @@ export default async function handler(
     console.error('[generate] UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN are required')
     return res.status(500).json({ error: 'Rate limiter not configured' })
   }
-  const identifier = `${user.id}:${clientIp ?? 'unknown'}`
+  const identifier = clientIp ? `${user.id}:${clientIp}` : user.id
   const { success, limit, remaining, reset } = await rateLimiter.limit(identifier)
   res.setHeader('X-RateLimit-Limit', String(limit))
   res.setHeader('X-RateLimit-Remaining', String(remaining))
@@ -274,6 +306,19 @@ export default async function handler(
       metadata: { reason: 'invalid_context_after_sanitize' }
     })
     return res.status(400).json({ error: 'Invalid context' })
+  }
+
+  if (containsPromptInjectionAttempt(context) || containsPromptInjectionAttempt(trigger)) {
+    await writeAuditLog({
+      user_id: user.id,
+      action: 'ai_generate_request',
+      resource: 'api/generate',
+      outcome: 'denied',
+      ip_address: clientIp,
+      user_agent: userAgent,
+      metadata: { reason: 'prompt_injection_pattern_detected' }
+    })
+    return res.status(400).json({ error: 'Disallowed prompt content' })
   }
 
   // ── Build prompt ──────────────────────────────────────────────────────────
