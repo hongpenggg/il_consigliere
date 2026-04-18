@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
+import { AppIcon } from '@/components/AppIcon'
 import type { PlayerStats } from '@/types'
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -155,7 +156,7 @@ function EpilogueOverlay({ onClose, onRestart }: EpilogueOverlayProps) {
             onClick={onClose}
             className="font-label text-[10px] uppercase tracking-widest text-on-surface/30 hover:text-on-surface transition-colors flex items-center gap-2"
           >
-            <span className="material-symbols-outlined text-sm">close</span> Close
+            <AppIcon name="close" className="text-sm" /> Close
           </button>
         </header>
 
@@ -247,9 +248,7 @@ function EpilogueOverlay({ onClose, onRestart }: EpilogueOverlayProps) {
             <span className="font-label text-sm font-bold uppercase tracking-widest text-on-primary-container group-hover:text-primary transition-colors">
               Begin Again
             </span>
-            <span className="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">
-              arrow_forward
-            </span>
+            <AppIcon name="arrow_forward" className="text-primary group-hover:translate-x-1 transition-transform" />
           </button>
         </footer>
       </div>
@@ -481,9 +480,7 @@ export default function ConcludeScreen() {
                 <span className="font-label text-sm font-bold uppercase tracking-widest text-on-primary-container group-hover:text-primary transition-colors">
                   Read Epilogue
                 </span>
-                <span className="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">
-                  arrow_forward
-                </span>
+                <AppIcon name="arrow_forward" className="text-primary group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
@@ -493,9 +490,7 @@ export default function ConcludeScreen() {
                 <span className="font-label text-sm uppercase tracking-widest text-on-surface/60 group-hover:text-on-surface transition-colors">
                   New Story
                 </span>
-                <span className="material-symbols-outlined text-on-surface/40 group-hover:text-on-surface transition-all">
-                  refresh
-                </span>
+                <AppIcon name="refresh" className="text-on-surface/40 group-hover:text-on-surface transition-all" />
               </button>
             </div>
           </footer>

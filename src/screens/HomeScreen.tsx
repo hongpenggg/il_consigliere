@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useSupabaseAuth } from '@/hooks/useSupabase'
+import { AppIcon } from '@/components/AppIcon'
 import type { PlayerStats } from '@/types'
 
 const AFFILIATIONS = [
@@ -82,7 +83,7 @@ export default function HomeScreen() {
             onClick={() => setStep('landing')}
             className="flex items-center gap-2 font-label text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-on-surface transition-colors mb-10"
           >
-            <span className="material-symbols-outlined text-sm">arrow_back</span> Back
+            <AppIcon name="arrow_back" className="text-sm" /> Back
           </button>
 
           <div className="mb-8">
@@ -152,9 +153,7 @@ export default function HomeScreen() {
               <span className="font-label text-sm font-bold uppercase tracking-widest text-on-primary-container">
                 Enter the Council
               </span>
-              <span className="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">
-                arrow_forward
-              </span>
+              <AppIcon name="arrow_forward" className="text-primary group-hover:translate-x-1 transition-transform" />
             </button>
 
             {!userId && (
@@ -202,9 +201,9 @@ export default function HomeScreen() {
         {/* Top nav */}
         <header className="flex items-center justify-between mb-auto">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 border border-primary/40 flex items-center justify-center">
-              <span className="material-symbols-outlined text-primary text-lg" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
-            </div>
+              <div className="w-8 h-8 border border-primary/40 flex items-center justify-center">
+              <AppIcon name="shield" className="text-primary text-lg" />
+              </div>
             <div>
               <p className="font-headline text-sm font-bold text-on-surface leading-none">IL CONSIGLIERE</p>
               <p className="font-label text-[9px] uppercase tracking-widest text-primary/50">Cosa Nostra</p>
@@ -216,14 +215,14 @@ export default function HomeScreen() {
               onClick={() => void handleSignOut()}
               className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-error transition-colors flex items-center gap-2"
             >
-              <span className="material-symbols-outlined text-sm">logout</span> Sign Out
+              <AppIcon name="logout" className="text-sm" /> Sign Out
             </button>
           ) : (
             <button
               onClick={() => navigate('/auth')}
               className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 hover:text-on-surface transition-colors flex items-center gap-2"
             >
-              <span className="material-symbols-outlined text-sm">login</span> Sign In
+              <AppIcon name="login" className="text-sm" /> Sign In
             </button>
           )}
         </header>
@@ -253,9 +252,7 @@ export default function HomeScreen() {
               <span className="font-label text-sm font-bold uppercase tracking-widest text-on-primary-container">
                 Begin New Game
               </span>
-              <span className="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">
-                arrow_forward
-              </span>
+              <AppIcon name="arrow_forward" className="text-primary group-hover:translate-x-1 transition-transform" />
             </button>
 
             {player && (
@@ -266,9 +263,7 @@ export default function HomeScreen() {
                 <span className="font-label text-sm uppercase tracking-widest text-on-surface/70 group-hover:text-on-surface transition-colors">
                   Continue — {player.familyName} Family
                 </span>
-                <span className="material-symbols-outlined text-on-surface/40 group-hover:text-on-surface transition-all">
-                  play_arrow
-                </span>
+                <AppIcon name="play_arrow" className="text-on-surface/40 group-hover:text-on-surface transition-all" />
               </button>
             )}
 

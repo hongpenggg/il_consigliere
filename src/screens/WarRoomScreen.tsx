@@ -4,6 +4,7 @@ import { useGameStore } from '@/store/gameStore'
 import { useAIGenerator } from '@/hooks/useAIGenerator'
 import { useGameState } from '@/hooks/useGameState'
 import { GlassPanel } from '@/components/GlassPanel'
+import { AppIcon } from '@/components/AppIcon'
 import type { Territory } from '@/types'
 
 function influenceClass(n: number) {
@@ -204,7 +205,7 @@ export default function WarRoomScreen() {
                       disabled={actionLoading !== null || isGenerating}
                       className="w-full group flex items-center gap-3 px-4 py-3 bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 hover:bg-primary-container/20 disabled:opacity-40 disabled:cursor-not-allowed transition-all text-left"
                     >
-                      <span className="material-symbols-outlined text-on-surface/40 group-hover:text-primary transition-colors text-sm">{op.icon}</span>
+                      <AppIcon name={op.icon} className="text-on-surface/40 group-hover:text-primary transition-colors text-sm" />
                       <div className="flex-1">
                         <p className="font-label text-xs font-bold uppercase tracking-wide text-on-surface group-hover:text-primary transition-colors">{op.label}</p>
                         <p className="font-label text-[9px] text-on-surface/30 uppercase tracking-wide">{op.desc}</p>
@@ -240,9 +241,7 @@ export default function WarRoomScreen() {
                                 <p className="font-body text-xs text-on-surface">{c.text}</p>
                                 {c.label && <p className="font-label text-[9px] text-on-surface/30 mt-0.5 uppercase tracking-wide">{c.label}</p>}
                               </div>
-                              <span className="material-symbols-outlined text-primary/40 group-hover:text-primary text-sm transition-all group-hover:translate-x-0.5">
-                                arrow_forward
-                              </span>
+                              <AppIcon name="arrow_forward" className="text-primary/40 group-hover:text-primary text-sm transition-all group-hover:translate-x-0.5" />
                             </button>
                           ))}
                         </div>
@@ -254,7 +253,7 @@ export default function WarRoomScreen() {
             </>
           ) : (
             <GlassPanel className="p-8 flex flex-col items-center justify-center text-center">
-              <span className="material-symbols-outlined text-on-surface/20 text-5xl mb-3">map</span>
+              <AppIcon name="map" className="text-on-surface/20 text-5xl mb-3" />
               <p className="font-label text-xs uppercase tracking-widest text-on-surface/30">
                 Select a territory to begin
               </p>
@@ -269,9 +268,7 @@ export default function WarRoomScreen() {
             <span className="font-label text-[10px] uppercase tracking-widest text-error/70 group-hover:text-error transition-colors">
               Conclude Campaign
             </span>
-            <span className="material-symbols-outlined text-error/40 group-hover:text-error text-sm transition-colors">
-              flag
-            </span>
+            <AppIcon name="flag" className="text-error/40 group-hover:text-error text-sm transition-colors" />
           </button>
         </div>
       </div>

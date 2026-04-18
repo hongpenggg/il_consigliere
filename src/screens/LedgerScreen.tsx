@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { GlassPanel } from '@/components/GlassPanel'
+import { AppIcon } from '@/components/AppIcon'
 import { formatLira } from '@/lib/utils'
 import type { LedgerType } from '@/types'
 
@@ -79,7 +80,7 @@ export default function LedgerScreen() {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-5 py-12 text-center">
-                  <span className="material-symbols-outlined text-on-surface/20 text-4xl block mb-2">receipt_long</span>
+                  <AppIcon name="receipt_long" className="text-on-surface/20 text-4xl mb-2" />
                   <p className="font-label text-xs uppercase tracking-widest text-on-surface/30">No entries found</p>
                 </td>
               </tr>
@@ -130,7 +131,7 @@ function SummaryCard({ label, value, valueClass, icon }: { label: string; value:
         <p className="font-label text-[10px] uppercase tracking-widest text-on-surface/40 mb-2">{label}</p>
         <p className={`font-label text-xl font-bold tabular-nums ${valueClass}`}>{value}</p>
       </div>
-      <span className="material-symbols-outlined text-on-surface/20 text-2xl">{icon}</span>
+      <AppIcon name={icon} className="text-on-surface/20 text-2xl" />
     </div>
   )
 }

@@ -22,6 +22,49 @@ const TutorialScreen  = lazy(() => import('@/screens/TutorialScreen'))
 const SESSION_KEY = 'il_consigliere_player'
 const PROGRESS_SESSION_KEY = 'il_consigliere_progress'
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isValidPlayerStats(value: unknown): value is PlayerStats {
+  if (!isRecord(value)) return false
+  return (
+    typeof value.id === 'string' &&
+    typeof value.name === 'string' &&
+    typeof value.familyName === 'string' &&
+    typeof value.territory === 'string' &&
+    typeof value.affiliation === 'string' &&
+    typeof value.rank === 'string' &&
+    typeof value.wealth === 'number' &&
+    typeof value.loyalty === 'number' &&
+    typeof value.suspicion === 'number' &&
+    typeof value.heat === 'number' &&
+    typeof value.soldiers === 'number' &&
+    typeof value.territoryControl === 'number' &&
+    typeof value.diplomacy === 'number'
+  )
+}
+
+function parseProgressSnapshot(value: unknown): Record<string, unknown> | null {
+  if (!isRecord(value)) return null
+  const snapshot: Record<string, unknown> = {}
+
+  if (typeof value.tutorialCompleted === 'boolean') snapshot.tutorialCompleted = value.tutorialCompleted
+  if (typeof value.tutorialPhase === 'string') snapshot.tutorialPhase = value.tutorialPhase
+  if (typeof value.storyModeStarted === 'boolean') snapshot.storyModeStarted = value.storyModeStarted
+  if (typeof value.storyChapter === 'number') snapshot.storyChapter = value.storyChapter
+  if (typeof value.storyStep === 'number') snapshot.storyStep = value.storyStep
+  if (Array.isArray(value.storyPath) && value.storyPath.every((item) => typeof item === 'string')) {
+    snapshot.storyPath = value.storyPath
+  }
+  if (typeof value.storyEnding === 'string' || value.storyEnding === null) {
+    snapshot.storyEnding = value.storyEnding
+  }
+  if (isRecord(value.storyWorld)) snapshot.storyWorld = value.storyWorld
+
+  return snapshot
+}
+
 // ─── Loading fallback ─────────────────────────────────────────────────────────
 function GameLoader() {
   return (
@@ -59,16 +102,27 @@ function RequirePlayer({ children }: { children: React.ReactNode }) {
     try {
       const saved = sessionStorage.getItem(SESSION_KEY)
       if (saved) {
-        const parsed = JSON.parse(saved) as PlayerStats
+        const parsed = JSON.parse(saved) as unknown
+        if (!isValidPlayerStats(parsed)) {
+          sessionStorage.removeItem(SESSION_KEY)
+          sessionStorage.removeItem(PROGRESS_SESSION_KEY)
+          return <Navigate to="/" state={{ from: location }} replace />
+        }
         setPlayer(parsed)
         const savedProgress = sessionStorage.getItem(PROGRESS_SESSION_KEY)
         if (savedProgress) {
-          hydrateProgress(JSON.parse(savedProgress) as Record<string, unknown>)
+          const parsedProgress = parseProgressSnapshot(JSON.parse(savedProgress) as unknown)
+          if (parsedProgress) {
+            hydrateProgress(parsedProgress)
+          } else {
+            sessionStorage.removeItem(PROGRESS_SESSION_KEY)
+          }
         }
         return <>{children}</>
       }
     } catch {
-      // ignore corrupt data
+      sessionStorage.removeItem(SESSION_KEY)
+      sessionStorage.removeItem(PROGRESS_SESSION_KEY)
     }
     return <Navigate to="/" state={{ from: location }} replace />
   }

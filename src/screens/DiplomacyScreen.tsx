@@ -3,6 +3,7 @@
 
 import { useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
+import { AppIcon } from '@/components/AppIcon'
 
 type Stance = 'allied' | 'neutral' | 'hostile'
 
@@ -123,7 +124,7 @@ export default function DiplomacyScreen() {
                   </div>
                   {/* Stance badge */}
                   <span className={`flex items-center gap-1 px-2 py-1 rounded border font-label text-[10px] uppercase tracking-widest ${STANCE_COLOURS[faction.stance]}`}>
-                    <span className="material-symbols-outlined text-sm">{STANCE_ICON[faction.stance]}</span>
+                    <AppIcon name={STANCE_ICON[faction.stance]} className="text-sm" />
                     {faction.stance}
                   </span>
                 </div>
@@ -146,7 +147,7 @@ export default function DiplomacyScreen() {
                   onClick={() => sendEnvoy(selected.id)}
                   className="w-full py-2 font-label text-[10px] uppercase tracking-widest border border-[#ffb4ac]/20 text-[#ffb4ac] hover:bg-[#ffb4ac]/10 transition-all"
                 >
-                  <span className="material-symbols-outlined text-sm align-middle mr-1">send</span>
+                  <AppIcon name="send" className="text-sm align-middle mr-1" />
                   Send Envoy (+8 Trust)
                 </button>
                 <button
@@ -154,7 +155,7 @@ export default function DiplomacyScreen() {
                   disabled={selected.stance === 'allied'}
                   className="w-full py-2 font-label text-[10px] uppercase tracking-widest border border-emerald-400/20 text-emerald-400 hover:bg-emerald-400/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <span className="material-symbols-outlined text-sm align-middle mr-1">handshake</span>
+                  <AppIcon name="handshake" className="text-sm align-middle mr-1" />
                   Propose Alliance (Trust ≥60)
                 </button>
                 <button
@@ -162,14 +163,14 @@ export default function DiplomacyScreen() {
                   disabled={selected.stance !== 'hostile'}
                   className="w-full py-2 font-label text-[10px] uppercase tracking-widest border border-yellow-400/20 text-yellow-400 hover:bg-yellow-400/10 transition-all disabled:opacity-30 disabled:cursor-not-allowed"
                 >
-                  <span className="material-symbols-outlined text-sm align-middle mr-1">balance</span>
+                  <AppIcon name="balance" className="text-sm align-middle mr-1" />
                   Declare Truce
                 </button>
               </div>
             </div>
           ) : (
             <div className="border border-[#ffb4ac]/10 bg-[#1c1c1c] p-5 text-center">
-              <span className="material-symbols-outlined text-4xl text-gray-600">gavel</span>
+              <AppIcon name="gavel" className="text-4xl text-gray-600" />
               <p className="font-label text-[10px] uppercase text-gray-500 mt-2 tracking-widest">Select a faction to begin negotiations</p>
             </div>
           )}

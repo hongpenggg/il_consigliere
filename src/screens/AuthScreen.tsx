@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useSupabaseAuth } from '@/hooks/useSupabase'
+import { AppIcon } from '@/components/AppIcon'
 
 type Mode = 'signin' | 'signup' | 'magic'
 
@@ -72,7 +73,7 @@ export default function AuthScreen() {
         {/* Logo */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-16 h-16 border border-primary/30 mb-4">
-            <span className="material-symbols-outlined text-primary text-3xl" style={{ fontVariationSettings: "'FILL' 1" }}>shield</span>
+            <AppIcon name="shield" className="text-primary text-3xl" />
           </div>
           <h1 className="font-headline text-4xl italic text-on-surface">Il Consigliere</h1>
           <p className="font-label text-[10px] uppercase tracking-[0.4em] text-primary/60 mt-1">
@@ -105,7 +106,7 @@ export default function AuthScreen() {
             disabled={loading}
             className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-outline-variant/30 bg-surface-container-low hover:bg-surface-container transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <span className="material-symbols-outlined text-base">account_circle</span>
+            <AppIcon name="account_circle" className="text-base" />
             <span className="font-label text-[10px] uppercase tracking-widest text-on-surface/80">
               Continue with Google
             </span>
@@ -166,9 +167,7 @@ export default function AuthScreen() {
             <span className="font-label text-sm font-bold uppercase tracking-widest text-on-primary-container">
               {loading ? 'Connecting...' : mode === 'signin' ? 'Enter the Council' : mode === 'signup' ? 'Create Identity' : 'Send Magic Link'}
             </span>
-            <span className="material-symbols-outlined text-primary group-hover:translate-x-1 transition-transform">
-              arrow_forward
-            </span>
+            <AppIcon name="arrow_forward" className="text-primary group-hover:translate-x-1 transition-transform" />
           </button>
         </form>
 

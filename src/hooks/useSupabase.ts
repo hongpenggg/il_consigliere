@@ -158,6 +158,8 @@ export function useUserProgress() {
     hydrateProgress,
   } = useGameStore()
 
+  const waitBeforeRetry = () => new Promise<void>((resolve) => setTimeout(resolve, 150))
+
   const saveProgress = useCallback(async (overrides?: {
     tutorialCompleted?: boolean
     tutorialPhase?: string
@@ -343,7 +345,7 @@ export function useGameSaves() {
         slotName:       d.slot_name      as string,
         playerStats:    d.player_stats   as unknown as PlayerStats,
         currentChapter: d.chapter        as number,
-        lastSaved:      d.updated_at     as string,
+        lastSaved:      ((d.updated_at as string | null) ?? (d.created_at as string | null) ?? new Date().toISOString()),
         playTime:       (d.play_time     as number) ?? 0
       })) as GameSave[])
     }
@@ -378,7 +380,7 @@ export function useGameLedger() {
     if (!userId) return
     const { data } = await supabase
       .from('ledger_entries')
-      .select('*')
+      .select('id, description, amount, type, created_at')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(100)
@@ -389,7 +391,7 @@ export function useGameLedger() {
         amount:      d.amount      as number,
         type:        d.type        as LedgerEntry['type'],
         timestamp:   d.created_at  as string,
-        territory:   d.territory   as string | undefined
+        territory:   undefined,
       })) as LedgerEntry[])
     }
   }, [userId, setLedgerEntries])
@@ -398,7 +400,6 @@ export function useGameLedger() {
     description: string,
     amount: number,
     type: LedgerEntry['type'],
-    territory?: string
   ) => {
     if (!userId) return
     await supabase.from('ledger_entries').insert({
@@ -406,10 +407,8 @@ export function useGameLedger() {
       description,
       amount,
       type,
-      ...(territory ? { territory } : {})
     })
   }, [userId])
 
   return { loadLedger, addEntry }
 }
-    const waitBeforeRetry = () => new Promise((resolve) => setTimeout(resolve, 150))

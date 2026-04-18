@@ -6,6 +6,7 @@ import { useState, useRef, useCallback, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useUserProgress } from '@/hooks/useSupabase'
+import { AppIcon } from '@/components/AppIcon'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -100,7 +101,7 @@ function NarrativeBox({ lines }: { lines: string[] }) {
           return (
             <div key={i} className="flex gap-3">
               <div className="mt-0.5 w-8 h-8 flex-shrink-0 bg-[#89070e]/30 border border-[#ffb4ac]/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-sm text-[#ffb4ac]">person</span>
+                <AppIcon name="person" className="text-sm text-[#ffb4ac]" />
               </div>
               <div>
                 <p className="font-label text-[9px] text-[#ffb4ac] uppercase tracking-widest mb-0.5">Francesco Ricci</p>
@@ -113,7 +114,7 @@ function NarrativeBox({ lines }: { lines: string[] }) {
           return (
             <div key={i} className="flex gap-3">
               <div className="mt-0.5 w-8 h-8 flex-shrink-0 bg-blue-900/30 border border-blue-400/20 flex items-center justify-center">
-                <span className="material-symbols-outlined text-sm text-blue-400">account_balance</span>
+                <AppIcon name="account_balance" className="text-sm text-blue-400" />
               </div>
               <div>
                 <p className="font-label text-[9px] text-blue-400 uppercase tracking-widest mb-0.5">The Mayor</p>
@@ -247,8 +248,8 @@ function ObjectivesTask({ onComplete }: { onComplete: () => void }) {
                 status === 'running' ? 'bg-yellow-500/20 border-yellow-400/40' :
                 'bg-[#2a2a2a] border-gray-600'
               }`}>
-                {status === 'done' && <span className="material-symbols-outlined text-[10px] text-emerald-400">check</span>}
-                {status === 'running' && <span className="material-symbols-outlined text-[10px] text-yellow-400 animate-spin" style={{fontSize:'10px'}}>autorenew</span>}
+                {status === 'done' && <AppIcon name="check" className="text-[10px] text-emerald-400" />}
+                {status === 'running' && <AppIcon name="autorenew" className="text-[10px] text-yellow-400 animate-spin" />}
               </div>
               <div className="flex-1">
                 <p className={`font-label text-[10px] uppercase tracking-widest ${
@@ -1490,7 +1491,7 @@ export default function TutorialScreen() {
       {/* ─── DONE ─────────────────────────────────────────────────────────── */}
       {state.phase === 'done' && (
         <div className="space-y-6 text-center py-8">
-          <span className="material-symbols-outlined text-6xl text-[#ffb4ac]">military_tech</span>
+          <AppIcon name="military_tech" className="text-6xl text-[#ffb4ac]" />
           <div>
             <h2 className="font-headline text-3xl text-[#ffb4ac]">Tutorial Complete</h2>
             <p className="font-label text-xs text-gray-400 uppercase tracking-widest mt-2">You are ready to lead, Consigliere — Chapters 0 to 10 complete.</p>
