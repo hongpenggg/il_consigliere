@@ -80,7 +80,7 @@ export default function LedgerScreen() {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-5 py-12 text-center">
-                  <AppIcon name="receipt_long" className="text-on-surface/20 text-4xl block mb-2 mx-auto" />
+                  <AppIcon name="receipt_long" className="text-on-surface/20 text-4xl mb-2" />
                   <p className="font-label text-xs uppercase tracking-widest text-on-surface/30">No entries found</p>
                 </td>
               </tr>

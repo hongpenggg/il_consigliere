@@ -89,8 +89,9 @@ interface AppIconProps {
 }
 
 export const AppIcon: FC<AppIconProps> = ({ name, className }) => {
-  const Icon = ICON_MAP[name] ?? Shield
-  if (!ICON_MAP[name] && import.meta.env.DEV && !warnedMissingIcons.has(name)) {
+  const mappedIcon = ICON_MAP[name]
+  const Icon = mappedIcon ?? Shield
+  if (!mappedIcon && import.meta.env.DEV && !warnedMissingIcons.has(name)) {
     warnedMissingIcons.add(name)
     console.warn(`Unknown icon name "${name}" passed to <AppIcon />`)
   }
