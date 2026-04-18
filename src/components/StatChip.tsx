@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { cn } from '@/lib/utils'
+import { AppIcon } from '@/components/AppIcon'
 
 export interface StatChipProps {
   icon?: string
@@ -19,7 +20,7 @@ export const StatChip: FC<StatChipProps> = ({
   return (
     <div className="flex items-center gap-3">
       {icon && (
-        <span className={cn('material-symbols-outlined', iconColor)}>{icon}</span>
+        <AppIcon name={icon} className={cn('text-xl', iconColor)} />
       )}
       <div className="flex flex-col">
         <span className="font-label text-[10px] uppercase text-gray-500 leading-none">{label}</span>

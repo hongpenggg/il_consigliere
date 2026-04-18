@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useSupabaseAuth } from '@/hooks/useSupabase'
 import { formatLira } from '@/lib/utils'
+import { AppIcon } from '@/components/AppIcon'
 
 const NAV_ITEMS = [
   { path: '/command',  icon: 'castle',         label: 'Command Center' },
@@ -31,12 +32,7 @@ export const SideNav: FC = () => {
       <div className="p-6 border-b border-[#ffb4ac]/10">
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-surface-container-high flex items-center justify-center border border-primary/20">
-            <span
-              className="material-symbols-outlined text-primary text-3xl"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              shield
-            </span>
+            <AppIcon name="shield" className="text-primary text-3xl" />
           </div>
           <div>
             <h3 className="font-headline text-lg font-bold text-on-surface leading-tight">
@@ -63,7 +59,7 @@ export const SideNav: FC = () => {
               }`
             }
           >
-            <span className="material-symbols-outlined">{item.icon}</span>
+            <AppIcon name={item.icon} />
             <span>{item.label}</span>
           </NavLink>
         ))}
@@ -89,14 +85,14 @@ export const SideNav: FC = () => {
             className="flex items-center gap-1 text-gray-500 hover:text-on-surface transition-colors"
             title="Account settings"
           >
-            <span className="material-symbols-outlined text-sm">manage_accounts</span>
+            <AppIcon name="manage_accounts" className="text-sm" />
           </button>
           <button
             onClick={() => void handleSignOut()}
             className="flex items-center gap-1 font-label text-[10px] uppercase tracking-widest text-gray-500 hover:text-error transition-colors"
             title="Sign out"
           >
-            <span className="material-symbols-outlined text-sm">logout</span>
+            <AppIcon name="logout" className="text-sm" />
             <span>Sign Out</span>
           </button>
         </div>

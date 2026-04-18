@@ -3,6 +3,7 @@ import { useGameStore } from '@/store/gameStore'
 import { useAIGenerator } from '@/hooks/useAIGenerator'
 import { useGameState } from '@/hooks/useGameState'
 import { GlassPanel } from '@/components/GlassPanel'
+import { AppIcon } from '@/components/AppIcon'
 import type { FamilyMember } from '@/types'
 
 const SEVERITY_BADGE: Record<string, string> = {
@@ -104,9 +105,7 @@ export default function DialogueScreen() {
                             <p className="font-body text-sm text-on-surface">{c.text}</p>
                             {c.label && <p className="font-label text-[10px] text-on-surface/30 mt-1 uppercase tracking-wide">{c.label}</p>}
                           </div>
-                          <span className="material-symbols-outlined text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all text-lg flex-shrink-0">
-                            arrow_forward
-                          </span>
+                          <AppIcon name="arrow_forward" className="text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all text-lg flex-shrink-0" />
                         </button>
                       ))}
                     </div>
@@ -179,7 +178,7 @@ export default function DialogueScreen() {
                       disabled={isGenerating}
                       className="flex items-center gap-2 px-4 py-2 border border-primary/30 text-primary font-label text-[10px] uppercase tracking-widest hover:bg-primary-container/30 transition-all disabled:opacity-40"
                     >
-                      <span className="material-symbols-outlined text-sm">refresh</span>
+                      <AppIcon name="refresh" className="text-sm" />
                       Consult Again
                     </button>
                   </div>
@@ -204,7 +203,7 @@ export default function DialogueScreen() {
                             <p className="font-body text-sm text-on-surface">{c.text}</p>
                             {c.label && <p className="font-label text-[10px] text-on-surface/30 mt-1 uppercase tracking-wide">{c.label}</p>}
                           </div>
-                          <span className="material-symbols-outlined text-primary/40 group-hover:text-primary transition-all text-lg flex-shrink-0 group-hover:translate-x-1">arrow_forward</span>
+                          <AppIcon name="arrow_forward" className="text-primary/40 group-hover:text-primary transition-all text-lg flex-shrink-0 group-hover:translate-x-1" />
                         </button>
                       ))}
                     </div>
@@ -212,7 +211,7 @@ export default function DialogueScreen() {
                 </>
               ) : (
                 <div className="flex flex-col items-center justify-center h-48 text-center">
-                  <span className="material-symbols-outlined text-on-surface/20 text-5xl mb-3">forum</span>
+                  <AppIcon name="forum" className="text-on-surface/20 text-5xl mb-3" />
                   <p className="font-label text-xs uppercase tracking-widest text-on-surface/30">Select a family member to consult</p>
                 </div>
               )}

@@ -1,6 +1,7 @@
 import type { FC } from 'react'
 import type { IntelReport } from '@/types'
 import { cn } from '@/lib/utils'
+import { AppIcon } from '@/components/AppIcon'
 
 interface IntelCardProps {
   report: IntelReport
@@ -22,9 +23,9 @@ export const IntelCard: FC<IntelCardProps> = ({ report, compact = false }) => {
         severityStyles[report.severity],
         compact ? 'p-3' : 'p-4'
       )}
-    >
+      >
       <div className="flex items-center gap-2 mb-1">
-        <span className="material-symbols-outlined text-sm">warning</span>
+        <AppIcon name="warning" className="text-sm" />
         <span className="font-label text-[10px] uppercase font-bold tracking-widest">
           {report.severity.toUpperCase()} ALERT
         </span>

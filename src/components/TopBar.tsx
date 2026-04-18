@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useSupabaseAuth } from '@/hooks/useSupabase'
 import { formatLira } from '@/lib/utils'
+import { AppIcon } from '@/components/AppIcon'
 
 export default function TopBar() {
   const { player, notificationsOpen, setNotificationsOpen, intelReports, resetGame, userId } = useGameStore()
@@ -49,12 +50,7 @@ export default function TopBar() {
         className="flex items-center gap-3 group"
       >
         <div className="w-8 h-8 border border-primary/40 flex items-center justify-center group-hover:border-primary transition-colors">
-          <span
-            className="material-symbols-outlined text-primary text-lg"
-            style={{ fontVariationSettings: "'FILL' 1" }}
-          >
-            shield
-          </span>
+          <AppIcon name="shield" className="text-primary text-lg" />
         </div>
         <div>
           <p className="font-headline text-base font-bold text-on-surface leading-none">IL CONSIGLIERE</p>
@@ -80,9 +76,7 @@ export default function TopBar() {
           className="relative w-10 h-10 flex items-center justify-center hover:bg-surface-container transition-colors"
           aria-label="Notifications"
         >
-          <span className="material-symbols-outlined text-on-surface-variant hover:text-on-surface text-xl">
-            notifications
-          </span>
+          <AppIcon name="notifications" className="text-on-surface-variant hover:text-on-surface text-xl" />
           {criticalCount > 0 && (
             <span className="absolute top-1 right-1 w-4 h-4 bg-error text-on-error text-[9px] font-bold rounded-full flex items-center justify-center">
               {criticalCount}
@@ -97,11 +91,9 @@ export default function TopBar() {
               onClick={() => setMenuOpen((o) => !o)}
               className="flex items-center gap-2 px-3 py-2 border border-primary/10 bg-surface-container-low hover:border-primary/30 transition-colors"
             >
-              <span className="material-symbols-outlined text-primary text-sm" style={{ fontVariationSettings: "'FILL' 1" }}>person</span>
+              <AppIcon name="person" className="text-primary text-sm" />
               <span className="hidden sm:block font-label text-xs text-on-surface-variant">{player.name}</span>
-              <span className="material-symbols-outlined text-on-surface/30 text-sm">
-                {menuOpen ? 'expand_less' : 'expand_more'}
-              </span>
+              <AppIcon name={menuOpen ? 'expand_less' : 'expand_more'} className="text-on-surface/30 text-sm" />
             </button>
 
             {/* Dropdown */}
@@ -120,7 +112,7 @@ export default function TopBar() {
                     onClick={() => { setMenuOpen(false); navigate('/auth') }}
                     className="w-full flex items-center gap-3 px-4 py-3 font-label text-xs text-on-surface hover:bg-surface-container transition-colors text-left"
                   >
-                    <span className="material-symbols-outlined text-sm">login</span>
+                    <AppIcon name="login" className="text-sm" />
                     Sign In to Save
                   </button>
                 )}
@@ -128,7 +120,7 @@ export default function TopBar() {
                   onClick={() => void handleSignOut()}
                   className="w-full flex items-center gap-3 px-4 py-3 font-label text-xs text-error hover:bg-error/10 transition-colors text-left"
                 >
-                  <span className="material-symbols-outlined text-sm">logout</span>
+                  <AppIcon name="logout" className="text-sm" />
                   Sign Out
                 </button>
               </div>
