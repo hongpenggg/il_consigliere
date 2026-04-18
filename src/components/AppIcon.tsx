@@ -81,6 +81,8 @@ const ICON_MAP: Record<string, LucideIcon> = {
   warning: TriangleAlert,
 }
 
+const warnedMissingIcons = new Set<string>()
+
 interface AppIconProps {
   name: string
   className?: string
@@ -88,5 +90,9 @@ interface AppIconProps {
 
 export const AppIcon: FC<AppIconProps> = ({ name, className }) => {
   const Icon = ICON_MAP[name] ?? Shield
+  if (!ICON_MAP[name] && import.meta.env.DEV && !warnedMissingIcons.has(name)) {
+    warnedMissingIcons.add(name)
+    console.warn(`Unknown icon name "${name}" passed to <AppIcon />`)
+  }
   return <Icon aria-hidden className={cn('inline-block h-[1em] w-[1em] shrink-0 align-middle', className)} />
 }
