@@ -158,10 +158,7 @@ export function useUserProgress() {
     hydrateProgress,
   } = useGameStore()
 
-  const waitBeforeRetry = useCallback(
-    () => new Promise<void>((resolve) => setTimeout(resolve, 150)),
-    [],
-  )
+  const waitBeforeRetry = () => new Promise<void>((resolve) => setTimeout(resolve, 150))
 
   const saveProgress = useCallback(async (overrides?: {
     tutorialCompleted?: boolean
@@ -403,7 +400,6 @@ export function useGameLedger() {
     description: string,
     amount: number,
     type: LedgerEntry['type'],
-    _territory?: string
   ) => {
     if (!userId) return
     await supabase.from('ledger_entries').insert({
