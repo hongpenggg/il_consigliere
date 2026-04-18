@@ -263,7 +263,7 @@ export default function HomeScreen() {
                 <span className="font-label text-sm uppercase tracking-widest text-on-surface/70 group-hover:text-on-surface transition-colors">
                   Continue — {player.familyName} Family
                 </span>
-                <AppIcon name="arrow_forward" className="text-on-surface/40 group-hover:text-on-surface transition-all" />
+                <AppIcon name="play_arrow" className="text-on-surface/40 group-hover:text-on-surface transition-all" />
               </button>
             )}
 
