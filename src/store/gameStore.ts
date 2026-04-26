@@ -174,9 +174,24 @@ const DEFAULT_NPC_TONE_MEMORY: Record<string, NpcToneMemoryEntry> = {
 }
 
 const SEASONS: Array<StoryWorldState['season']> = ['Spring', 'Summer', 'Fall', 'Winter']
+const WEEKS_PER_YEAR = 52
+const WEEKS_PER_SEASON = 13
+const TERRITORY_NEGLECT_THRESHOLD = 2
 
 function normalizePhilosophy(value: number): number {
   return Math.round((value + 5) * 10)
+}
+
+function formatWeeklyHeadline(cause: string, week: number): string {
+  const normalized = cause.toLowerCase()
+  if (normalized.includes('operation in')) {
+    const target = cause.replace(/operation in/i, '').trim()
+    return `IL CORRIERE — WEEK ${week}: ${target.toUpperCase()} FRONT ESCALATES`
+  }
+  if (normalized.includes('dialogue')) {
+    return `IL CORRIERE — WEEK ${week}: COUNCIL CHAMBER SHIFT`
+  }
+  return `IL CORRIERE — WEEK ${week}: CITY UNDER PRESSURE`
 }
 
 export const useGameStore = create<GameStore>((set, get) => ({
@@ -223,7 +238,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   evaluateNeglectedTerritories: () => set((state) => ({
     territories: state.territories.map((territory) => {
       const ignoredWeeks = state.storyWorld.week - (territory.lastInteractedWeek ?? 1)
-      if (ignoredWeeks >= 2 && territory.controller === 'Player') {
+      if (ignoredWeeks >= TERRITORY_NEGLECT_THRESHOLD && territory.controller === 'Player') {
         return { ...territory, controller: 'Contested' }
       }
       return territory
@@ -376,8 +391,8 @@ export const useGameStore = create<GameStore>((set, get) => ({
   advanceWeek: (cause) => {
     const current = get().storyWorld
     const week = current.week + 1
-    const nextSeasonIndex = Math.floor((week - 1) / 13) % 4
-    const yearsPassed = Math.floor((week - 1) / 52)
+    const nextSeasonIndex = Math.floor(((week - 1) % WEEKS_PER_YEAR) / WEEKS_PER_SEASON)
+    const yearsPassed = Math.floor((week - 1) / WEEKS_PER_YEAR)
     const nextYear = 1947 + yearsPassed
     set({
       storyWorld: {
@@ -389,7 +404,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     })
     get().evaluateNeglectedTerritories()
     get().addNewspaperIssue(
-      `IL CORRIERE — WEEK ${week}: ${cause.toUpperCase()}`,
+      formatWeeklyHeadline(cause, week),
       'A delayed consequence surfaces as alliances shift and pressure mounts across both coasts.'
     )
     if (week % 4 === 0) {

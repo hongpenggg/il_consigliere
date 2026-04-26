@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useAIGenerator } from '@/hooks/useAIGenerator'
@@ -43,8 +43,6 @@ export default function WarRoomScreen() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
   const regionTerritories = useMemo(() => territories.filter((t) => t.region === activeRegion), [territories, activeRegion])
-  const currentWeek = useGameStore((s) => s.storyWorld.week)
-
   async function launchOperation(territory: Territory, operation: string) {
     setActionLoading(operation)
     setSelectedTerritory(territory)
@@ -72,14 +70,6 @@ export default function WarRoomScreen() {
     setTimeout(() => setRegionTransitionTitle(null), 1200)
     setActiveRegion(region)
   }
-
-  useEffect(() => {
-    if (!selectedTerritory) return
-    const freshness = currentWeek - (selectedTerritory.lastInteractedWeek ?? 1)
-    if (freshness >= 2 && selectedTerritory.controller === 'Player') {
-      setSelectedTerritory({ ...selectedTerritory, controller: 'Contested' })
-    }
-  }, [currentWeek, selectedTerritory, setSelectedTerritory])
 
   return (
     <div className="space-y-6">

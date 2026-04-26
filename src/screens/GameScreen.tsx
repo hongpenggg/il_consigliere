@@ -54,6 +54,8 @@ export default function GameScreen() {
     useGameStore()
   const { generateNarrative, handleChoice } = useAIGenerator()
   const [lastVoteResult, setLastVoteResult] = useState<string | null>(null)
+  const [proposalIndex, setProposalIndex] = useState(0)
+  const proposals = ['Move into Chicago', 'Broker Naples labor pact', 'Expand Brooklyn waterfront']
 
   useEffect(() => {
     if (!player) {
@@ -241,12 +243,14 @@ export default function GameScreen() {
             </div>
             <button
               onClick={() => {
-                const approved = runCommissionVote('Move into Chicago')
-                setLastVoteResult(approved ? 'Operation approved by majority vote.' : 'Operation blocked in chamber vote.')
+                const currentProposal = proposals[proposalIndex % proposals.length]
+                const approved = runCommissionVote(currentProposal)
+                setLastVoteResult(`${currentProposal}: ${approved ? 'approved by majority vote.' : 'blocked in chamber vote.'}`)
+                setProposalIndex((idx) => idx + 1)
               }}
               className="mt-3 px-4 py-2 border border-primary/40 text-primary font-label text-[10px] uppercase tracking-widest hover:bg-primary/10 transition-all"
             >
-              Hold Monthly Vote
+              Hold Monthly Vote ({proposals[proposalIndex % proposals.length]})
             </button>
             {lastVoteResult && <p className="font-label text-[10px] uppercase tracking-wide text-on-surface/50 mt-2">{lastVoteResult}</p>}
           </GlassPanel>

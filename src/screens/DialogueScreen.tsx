@@ -53,7 +53,8 @@ export default function DialogueScreen() {
     if (/(strike|threat|force|hostile|burn|eliminate|intimid)/.test(blob)) return 'INTIMIDATE'
     if (/(deal|diplom|negot|truce|coalition|talk)/.test(blob)) return 'NEGOTIATE'
     if (/(delay|wait|defer|later|observe|monitor)/.test(blob)) return 'DEFER'
-    return 'BRIBE'
+    if (/(money|pay|bribe|grease|tribute|cash)/.test(blob)) return 'BRIBE'
+    return 'DEFER'
   }
 
   function toneBadge(tone: DialogueToneTag) {
@@ -79,7 +80,7 @@ export default function DialogueScreen() {
       index += 1
       setTypewriterText(text.slice(0, index))
       if (index >= text.length) clearInterval(timer)
-    }, 8)
+    }, 24)
     return () => clearInterval(timer)
   }, [currentEvent?.id, currentEvent?.content])
 
