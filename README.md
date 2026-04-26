@@ -4,6 +4,40 @@ A mafia strategy game with:
 - Python story/game prototype (`/Il Consigliere/game.py`)
 - React + Supabase web app (`/src`)
 
+## New narrative systems (Suzerain-style roadmap update)
+
+The React app now includes:
+
+- **Interactive War Room map upgrades**
+  - Territory click now triggers territory-specific narrative brief generation
+  - Animated heat pulse for high-resistance territories
+  - Neglect pressure: player-held territories can drift to `Contested` if ignored
+  - Region-switch cinematic title card: **CROSSING THE ATLANTIC**
+
+- **Deep NPC relationship layer**
+  - Family members now include ideology tags (`loyalist`, `opportunist`, `reformist`, `ruthless`)
+  - Dialogue tone memory per NPC (`INTIMIDATE`, `NEGOTIATE`, `DEFER`, `BRIBE`)
+  - Betrayal warning event path when low loyalty combines with high suspicion
+  - Familiarity-based hidden intel unlock for trusted characters
+
+- **Philosophy-driven consequence feedback**
+  - Dialogue choices now infer tone tags and shift philosophy axes
+  - Live philosophy meter feedback in Dialogue screen
+  - Hidden story route flags unlock when philosophy thresholds are crossed
+
+- **Weekly turn cadence + narrative pressure**
+  - Week/season/year progression with a “The Clock Is Ticking” header
+  - Actions can advance week and trigger delayed world pressure
+  - Periodic personal-life interruption events on the main game hub
+
+- **Newspaper + chronicle loop**
+  - Weekly “Il Corriere” issues are generated and stored
+  - Ledger now includes a **Chronicle** tab to review prior issues
+
+- **Commission political layer**
+  - Commission factions tracked in state (Old Families / Expansionists / Politicians)
+  - Monthly-style vote action in Game screen with majority outcome reporting
+
 ## Run the React app
 
 ```bash

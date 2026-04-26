@@ -1,10 +1,10 @@
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useGameStore } from '@/store/gameStore'
 import { useAIGenerator } from '@/hooks/useAIGenerator'
 import { useGameState } from '@/hooks/useGameState'
 import { GlassPanel } from '@/components/GlassPanel'
 import { AppIcon } from '@/components/AppIcon'
-import type { FamilyMember } from '@/types'
+import type { DialogueToneTag, FamilyMember } from '@/types'
 
 const SEVERITY_BADGE: Record<string, string> = {
   critical: 'bg-error/15 text-error border-error/30',
@@ -14,20 +14,87 @@ const SEVERITY_BADGE: Record<string, string> = {
 }
 
 export default function DialogueScreen() {
-  const { familyMembers, intelReports, player, currentEvent, isGenerating } = useGameStore()
+  const {
+    familyMembers,
+    intelReports,
+    player,
+    currentEvent,
+    isGenerating,
+    storyWorld,
+    logToneDecision,
+    applyPhilosophyShiftFromTone,
+    addIntelReport,
+    advanceWeek,
+  } = useGameStore()
   const { handleChoice, generateNarrative } = useAIGenerator()
   const { applyChoiceEffects } = useGameState()
 
   const [selectedMember, setSelectedMember] = useState<FamilyMember | null>(familyMembers[0] ?? null)
   const [activeTab, setActiveTab] = useState<'intel' | 'family'>('intel')
+  const [typewriterText, setTypewriterText] = useState('')
+
+  const normalizedPhilosophy = useMemo(() => ({
+    oldCodeVsNewBlood: Math.round((storyWorld.philosophy.oldCodeVsNewBlood + 5) * 10),
+    violenceVsPolitics: Math.round((storyWorld.philosophy.violenceVsPolitics + 5) * 10),
+    familyFirstVsEmpireFirst: Math.round((storyWorld.philosophy.familyFirstVsEmpireFirst + 5) * 10),
+    honorVsPragmatism: Math.round((storyWorld.philosophy.honorVsPragmatism + 5) * 10),
+  }), [storyWorld.philosophy])
 
   function consult(member: FamilyMember) {
     setSelectedMember(member)
-    generateNarrative(
+    void generateNarrative(
       `${player?.name ?? 'Don'} consults ${member.name}, the ${member.role}. Their loyalty is at ${member.loyalty}%.`,
       `consult_${member.id}`
     )
   }
+
+  function inferTone(choiceText: string, choiceLabel: string): DialogueToneTag {
+    const blob = `${choiceText} ${choiceLabel}`.toLowerCase()
+    if (/(strike|threat|force|hostile|burn|eliminate|intimid)/.test(blob)) return 'INTIMIDATE'
+    if (/(deal|diplom|negot|truce|coalition|talk)/.test(blob)) return 'NEGOTIATE'
+    if (/(delay|wait|defer|later|observe|monitor)/.test(blob)) return 'DEFER'
+    return 'BRIBE'
+  }
+
+  function toneBadge(tone: DialogueToneTag) {
+    return `[${tone}]`
+  }
+
+  function onChoice(memberId: string | null, choiceText: string, choiceLabel: string) {
+    const tone = inferTone(choiceText, choiceLabel)
+    if (memberId) logToneDecision(memberId, tone)
+    applyPhilosophyShiftFromTone(tone)
+    applyChoiceEffects(choiceLabel)
+    advanceWeek(`Dialogue ${tone.toLowerCase()}`)
+  }
+
+  useEffect(() => {
+    const text = currentEvent?.content ?? ''
+    if (!text) {
+      setTypewriterText('')
+      return
+    }
+    let index = 0
+    const timer = setInterval(() => {
+      index += 1
+      setTypewriterText(text.slice(0, index))
+      if (index >= text.length) clearInterval(timer)
+    }, 8)
+    return () => clearInterval(timer)
+  }, [currentEvent?.id, currentEvent?.content])
+
+  useEffect(() => {
+    if (!selectedMember) return
+    if (selectedMember.loyalty < 25 && (player?.suspicion ?? 0) >= 60) {
+      addIntelReport({
+        id: crypto.randomUUID(),
+        title: 'Traitor in the Ranks',
+        description: `${selectedMember.name} is wavering under pressure. Loyalty is collapsing while suspicion is high.`,
+        severity: 'critical',
+        timestamp: new Date().toISOString(),
+      })
+    }
+  }, [selectedMember, player?.suspicion, addIntelReport])
 
   return (
     <div className="space-y-6">
@@ -90,19 +157,25 @@ export default function DialogueScreen() {
                 </div>
               ) : (
                 <>
-                  <p className="font-body text-on-surface-variant leading-[1.9] text-base mb-6">
-                    {currentEvent?.content ?? 'Select a report to analyse it with the council.'}
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="w-8 h-8 border border-outline-variant/30 rounded-full flex items-center justify-center">
+                      <AppIcon name="person" className="text-on-surface/40 text-sm" />
+                    </div>
+                    <p className="font-label text-[10px] uppercase tracking-widest text-on-surface/40">Noir Briefing Feed</p>
+                  </div>
+                  <p className="font-body text-on-surface-variant leading-[1.9] text-base mb-6 min-h-24">
+                    {typewriterText || 'Select a report to analyse it with the council.'}
                   </p>
                   {currentEvent && (
                     <div className="space-y-2">
                       {currentEvent.choices.map((c) => (
                         <button
                           key={c.id}
-                          onClick={() => { applyChoiceEffects(c.label); handleChoice(c, currentEvent) }}
+                          onClick={() => { onChoice(selectedMember?.id ?? null, c.text, c.label); handleChoice(c, currentEvent) }}
                           className="w-full group flex items-start justify-between gap-4 px-5 py-4 bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 hover:bg-primary-container/20 transition-all text-left"
                         >
                           <div className="flex-1">
-                            <p className="font-body text-sm text-on-surface">{c.text}</p>
+                            <p className="font-body text-sm text-on-surface">{toneBadge(inferTone(c.text, c.label))} {c.text}</p>
                             {c.label && <p className="font-label text-[10px] text-on-surface/30 mt-1 uppercase tracking-wide">{c.label}</p>}
                           </div>
                           <AppIcon name="arrow_forward" className="text-primary/40 group-hover:text-primary group-hover:translate-x-1 transition-all text-lg flex-shrink-0" />
@@ -110,6 +183,12 @@ export default function DialogueScreen() {
                       ))}
                     </div>
                   )}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-2 mt-6">
+                    <PhilosophyMeter label="Old Code ↔ New Blood" value={normalizedPhilosophy.oldCodeVsNewBlood} />
+                    <PhilosophyMeter label="Violence ↔ Politics" value={normalizedPhilosophy.violenceVsPolitics} />
+                    <PhilosophyMeter label="Family First ↔ Empire First" value={normalizedPhilosophy.familyFirstVsEmpireFirst} />
+                    <PhilosophyMeter label="Honor ↔ Pragmatism" value={normalizedPhilosophy.honorVsPragmatism} />
+                  </div>
                 </>
               )}
             </GlassPanel>
@@ -135,6 +214,7 @@ export default function DialogueScreen() {
                   <div>
                     <p className="font-label text-sm font-bold text-on-surface">{m.name}</p>
                     <p className="font-label text-[10px] uppercase tracking-wide text-on-surface/40 mt-0.5">{m.role}</p>
+                    <p className="font-label text-[9px] uppercase tracking-wide text-primary/70 mt-1">{m.ideology}</p>
                   </div>
                   <div className="text-right">
                     <p className={`font-label text-lg font-bold tabular-nums ${
@@ -170,7 +250,12 @@ export default function DialogueScreen() {
                   <div className="mb-5 flex items-start justify-between">
                     <div>
                       <p className="font-label text-[10px] uppercase tracking-[0.3em] text-primary/60">Consulting</p>
-                      <h2 className="font-headline text-2xl italic text-on-surface">{selectedMember.name}</h2>
+                      <h2 className="font-headline text-2xl italic text-on-surface">
+                        {selectedMember.name}
+                        {selectedMember.familiarity >= 80 && (
+                          <span className="ml-2 font-label text-[9px] uppercase tracking-widest text-secondary">Deep Trust Unlocked</span>
+                        )}
+                      </h2>
                       <p className="font-label text-[10px] uppercase text-on-surface/40 tracking-wide">{selectedMember.role}</p>
                     </div>
                     <button
@@ -187,20 +272,35 @@ export default function DialogueScreen() {
                       {[1,2,3].map(i => <div key={i} className="h-4 bg-surface-container-high rounded animate-pulse" style={{ width: `${85 - i * 8}%` }} />)}
                     </div>
                   ) : (
-                    <p className="font-body text-on-surface-variant leading-[1.9] text-base">
-                      {currentEvent?.content ?? `${selectedMember.name} awaits your instruction. Press 'Consult Again' to seek their counsel.`}
-                    </p>
+                    <div>
+                      <p className="font-body text-on-surface-variant leading-[1.9] text-base min-h-24">
+                        {typewriterText || `${selectedMember.name} awaits your instruction. Press 'Consult Again' to seek their counsel.`}
+                      </p>
+                      {selectedMember.familiarity >= 80 && (
+                        <button
+                          onClick={() => {
+                            void generateNarrative(
+                              `${selectedMember.name} trusts ${player?.name ?? 'the consigliere'} deeply and reveals hidden leverage or backstory intel.`,
+                              `deep_trust_${selectedMember.id}`
+                            )
+                          }}
+                          className="mt-3 px-4 py-2 border border-secondary/30 text-secondary font-label text-[10px] uppercase tracking-widest hover:bg-secondary/10 transition-all"
+                        >
+                          Request Hidden Intel
+                        </button>
+                      )}
+                    </div>
                   )}
                   {currentEvent && !isGenerating && (
                     <div className="space-y-2 mt-6">
                       {currentEvent.choices.map((c) => (
                         <button
                           key={c.id}
-                          onClick={() => { applyChoiceEffects(c.label); handleChoice(c, currentEvent) }}
+                          onClick={() => { onChoice(selectedMember.id, c.text, c.label); handleChoice(c, currentEvent) }}
                           className="w-full group flex items-start justify-between gap-4 px-5 py-4 bg-surface-container-low border border-outline-variant/20 hover:border-primary/40 hover:bg-primary-container/20 transition-all text-left"
                         >
                           <div className="flex-1">
-                            <p className="font-body text-sm text-on-surface">{c.text}</p>
+                            <p className="font-body text-sm text-on-surface">{toneBadge(inferTone(c.text, c.label))} {c.text}</p>
                             {c.label && <p className="font-label text-[10px] text-on-surface/30 mt-1 uppercase tracking-wide">{c.label}</p>}
                           </div>
                           <AppIcon name="arrow_forward" className="text-primary/40 group-hover:text-primary transition-all text-lg flex-shrink-0 group-hover:translate-x-1" />
@@ -219,6 +319,20 @@ export default function DialogueScreen() {
           </div>
         </div>
       )}
+    </div>
+  )
+}
+
+function PhilosophyMeter({ label, value }: { label: string; value: number }) {
+  return (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <p className="font-label text-[9px] uppercase tracking-wide text-on-surface/40">{label}</p>
+        <p className="font-label text-[9px] uppercase tracking-wide text-primary/70">{value}</p>
+      </div>
+      <div className="h-1 bg-outline-variant/20 overflow-hidden">
+        <div className="h-full bg-primary transition-all duration-500" style={{ width: `${value}%` }} />
+      </div>
     </div>
   )
 }
