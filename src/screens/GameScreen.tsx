@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useAIGenerator } from '@/hooks/useAIGenerator'
@@ -38,9 +38,24 @@ function FamilyMemberBar({ member }: { member: FamilyMember }) {
 
 export default function GameScreen() {
   const navigate = useNavigate()
-  const { player, currentEvent, isGenerating, familyMembers, intelReports } =
+  const {
+    player,
+    currentEvent,
+    isGenerating,
+    familyMembers,
+    intelReports,
+    storyWorld,
+    personalEvents,
+    resolvePersonalEvent,
+    commissionFactions,
+    runCommissionVote,
+    newspaperIssues,
+  } =
     useGameStore()
   const { generateNarrative, handleChoice } = useAIGenerator()
+  const [lastVoteResult, setLastVoteResult] = useState<string | null>(null)
+  const [proposalIndex, setProposalIndex] = useState(0)
+  const proposals = ['Move into Chicago', 'Broker Naples labor pact', 'Expand Brooklyn waterfront']
 
   useEffect(() => {
     if (!player) {
@@ -79,6 +94,12 @@ export default function GameScreen() {
 
         <main className="flex-1 overflow-y-auto px-6 py-8 space-y-6">
           {/* Stat chips row */}
+          <div className="border border-outline-variant/20 bg-surface-container-low px-4 py-3">
+            <p className="font-label text-[10px] uppercase tracking-[0.3em] text-primary/70">
+              The Clock Is Ticking — Week {storyWorld.week}, {storyWorld.season} {storyWorld.year}
+            </p>
+          </div>
+
           <div className="flex flex-wrap gap-6">
             <StatChip
               icon="payments"
@@ -166,6 +187,14 @@ export default function GameScreen() {
             </div>
           )}
 
+          {newspaperIssues[0] && (
+            <GlassPanel border="left" className="p-4">
+              <p className="font-label text-[10px] uppercase tracking-[0.3em] text-on-surface/40 mb-2">Il Corriere</p>
+              <h3 className="font-headline text-2xl italic text-on-surface">{newspaperIssues[0].headline}</h3>
+              <p className="font-body text-sm text-on-surface/70 mt-1">{newspaperIssues[0].subheadline}</p>
+            </GlassPanel>
+          )}
+
           {/* Family loyalty bars */}
           {familyMembers.length > 0 && (
             <div className="space-y-3">
@@ -177,6 +206,54 @@ export default function GameScreen() {
               ))}
             </div>
           )}
+
+          {personalEvents.some((event) => event.unresolved) && (
+            <GlassPanel border="left" className="p-4 border border-secondary/30">
+              {personalEvents.filter((event) => event.unresolved).slice(0, 1).map((event) => (
+                <div key={event.id}>
+                  <p className="font-label text-[10px] uppercase tracking-[0.3em] text-secondary mb-2">Personal Event</p>
+                  <h3 className="font-headline text-2xl italic text-on-surface">{event.title}</h3>
+                  <p className="font-body text-sm text-on-surface/70 mt-2">{event.description}</p>
+                  <p className="font-label text-[10px] uppercase tracking-wide text-on-surface/40 mt-2">{event.effectsHint}</p>
+                  <div className="flex gap-2 mt-4">
+                    <button
+                      onClick={() => resolvePersonalEvent(event.id)}
+                      className="px-4 py-2 border border-secondary/40 text-secondary font-label text-[10px] uppercase tracking-widest hover:bg-secondary/10 transition-all"
+                    >
+                      Family First
+                    </button>
+                    <button
+                      onClick={() => resolvePersonalEvent(event.id)}
+                      className="px-4 py-2 border border-outline-variant/30 text-on-surface/70 font-label text-[10px] uppercase tracking-widest hover:bg-surface-container transition-all"
+                    >
+                      Empire First
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </GlassPanel>
+          )}
+
+          <GlassPanel border="left" className="p-4">
+            <p className="font-label text-[10px] uppercase tracking-[0.3em] text-primary/70 mb-2">The Commission</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs text-on-surface/70">
+              <p>Old Families: {commissionFactions.oldFamilies}</p>
+              <p>Expansionists: {commissionFactions.expansionists}</p>
+              <p>Politicians: {commissionFactions.politicians}</p>
+            </div>
+            <button
+              onClick={() => {
+                const currentProposal = proposals[proposalIndex % proposals.length]
+                const approved = runCommissionVote(currentProposal)
+                setLastVoteResult(`${currentProposal}: ${approved ? 'approved by majority vote.' : 'blocked in chamber vote.'}`)
+                setProposalIndex((idx) => idx + 1)
+              }}
+              className="mt-3 px-4 py-2 border border-primary/40 text-primary font-label text-[10px] uppercase tracking-widest hover:bg-primary/10 transition-all"
+            >
+              Hold Monthly Vote ({proposals[proposalIndex % proposals.length]})
+            </button>
+            {lastVoteResult && <p className="font-label text-[10px] uppercase tracking-wide text-on-surface/50 mt-2">{lastVoteResult}</p>}
+          </GlassPanel>
 
           {/* Conclude story CTA */}
           <div className="pt-4">

@@ -86,6 +86,7 @@ export interface StoryWorldState {
   city: 'Sicily' | 'Naples' | 'Rome' | 'New York' | 'Chicago' | 'Birmingham' | 'London'
   year: number
   season: 'Spring' | 'Summer' | 'Fall' | 'Winter'
+  week: number
   factions: StoryFactionState
   resources: StoryResourceState
   philosophy: StoryPhilosophyState
@@ -140,6 +141,8 @@ export interface FamilyMember {
   role: string
   loyalty: number
   familiarity: number
+  ideology: 'loyalist' | 'opportunist' | 'reformist' | 'ruthless'
+  respect: number
   status: 'active' | 'compromised' | 'eliminated' | 'unknown'
 }
 
@@ -158,6 +161,40 @@ export interface Territory {
   lng: number
   positionX: number
   positionY: number
+  lastInteractedWeek?: number
+}
+
+export type DialogueToneTag = 'INTIMIDATE' | 'NEGOTIATE' | 'DEFER' | 'BRIBE'
+
+export interface NpcToneMemoryEntry {
+  intimidate: number
+  negotiate: number
+  defer: number
+  bribe: number
+}
+
+export interface NewspaperIssue {
+  id: string
+  week: number
+  season: StoryWorldState['season']
+  year: number
+  headline: string
+  subheadline: string
+  timestamp: string
+}
+
+export interface PersonalEvent {
+  id: string
+  title: string
+  description: string
+  effectsHint: string
+  unresolved: boolean
+}
+
+export interface CommissionFactions {
+  oldFamilies: number
+  expansionists: number
+  politicians: number
 }
 
 // ─── Ledger ──────────────────────────────────────────────────────────────────

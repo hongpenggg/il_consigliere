@@ -15,8 +15,9 @@ const TYPE_STYLE: Record<LedgerType, { badge: string; sign: string }> = {
 }
 
 export default function LedgerScreen() {
-  const { ledgerEntries, player } = useGameStore()
+  const { ledgerEntries, player, newspaperIssues } = useGameStore()
   const [filter, setFilter] = useState<LedgerType | 'all'>('all')
+  const [tab, setTab] = useState<'ledger' | 'chronicle'>('ledger')
 
   const filtered = useMemo(() =>
     filter === 'all' ? ledgerEntries : ledgerEntries.filter(e => e.type === filter),
@@ -51,6 +52,31 @@ export default function LedgerScreen() {
 
       {/* Filter bar */}
       <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setTab('ledger')}
+          className={`font-label text-[10px] uppercase tracking-widest px-4 py-2 border transition-all ${
+            tab === 'ledger'
+              ? 'border-primary bg-primary-container/40 text-primary'
+              : 'border-outline-variant/20 text-on-surface/40 hover:text-on-surface hover:border-outline-variant/50'
+          }`}
+        >
+          Ledger
+        </button>
+        <button
+          onClick={() => setTab('chronicle')}
+          className={`font-label text-[10px] uppercase tracking-widest px-4 py-2 border transition-all ${
+            tab === 'chronicle'
+              ? 'border-primary bg-primary-container/40 text-primary'
+              : 'border-outline-variant/20 text-on-surface/40 hover:text-on-surface hover:border-outline-variant/50'
+          }`}
+        >
+          Chronicle
+        </button>
+      </div>
+
+      {tab === 'ledger' && (
+        <>
+          <div className="flex flex-wrap gap-2">
         {TYPES.map((t) => (
           <button
             key={t}
@@ -120,6 +146,29 @@ export default function LedgerScreen() {
           </tbody>
         </table>
       </GlassPanel>
+        </>
+      )}
+
+      {tab === 'chronicle' && (
+        <GlassPanel className="p-0 overflow-hidden">
+          <div className="divide-y divide-outline-variant/10">
+            {newspaperIssues.map((issue) => (
+              <article key={issue.id} className="p-5 bg-surface-container-low/30">
+                <p className="font-label text-[9px] uppercase tracking-[0.2em] text-on-surface/40 mb-1">
+                  Week {issue.week} · {issue.season} {issue.year}
+                </p>
+                <h3 className="font-headline text-xl italic text-on-surface">{issue.headline}</h3>
+                <p className="font-body text-sm text-on-surface/70 mt-2">{issue.subheadline}</p>
+              </article>
+            ))}
+            {newspaperIssues.length === 0 && (
+              <div className="p-8 text-center">
+                <p className="font-label text-[10px] uppercase tracking-widest text-on-surface/30">No editions printed yet</p>
+              </div>
+            )}
+          </div>
+        </GlassPanel>
+      )}
     </div>
   )
 }

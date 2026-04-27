@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameStore } from '@/store/gameStore'
 import { useAIGenerator } from '@/hooks/useAIGenerator'
@@ -20,6 +20,9 @@ function controllerClass(c: string) {
   return 'text-error'
 }
 
+/** Duration in milliseconds for the cinematic region-transition title card. */
+const REGION_TRANSITION_DURATION_MS = 1200
+
 export default function WarRoomScreen() {
   const {
     territories,
@@ -27,6 +30,10 @@ export default function WarRoomScreen() {
     setSelectedTerritory,
     activeRegion,
     setActiveRegion,
+    regionTransitionTitle,
+    setRegionTransitionTitle,
+    markTerritoryInteraction,
+    advanceWeek,
     player,
     currentEvent,
     isGenerating,
@@ -38,16 +45,33 @@ export default function WarRoomScreen() {
 
   const [actionLoading, setActionLoading] = useState<string | null>(null)
 
-  const regionTerritories = territories.filter((t) => t.region === activeRegion)
-
+  const regionTerritories = useMemo(() => territories.filter((t) => t.region === activeRegion), [territories, activeRegion])
   async function launchOperation(territory: Territory, operation: string) {
     setActionLoading(operation)
     setSelectedTerritory(territory)
+    markTerritoryInteraction(territory.id)
     await generateNarrative(
       `${player?.name ?? 'Don'} launches a "${operation}" operation in ${territory.name}. Current influence: ${territory.influence}%. Controller: ${territory.controller}. Resistance level: ${territory.resistanceLevel}/5.`,
       `operation_${operation.toLowerCase().replace(/ /g, '_')}`
     )
+    advanceWeek(`Operation in ${territory.name}`)
     setActionLoading(null)
+  }
+
+  function inspectTerritory(territory: Territory) {
+    setSelectedTerritory(territory)
+    markTerritoryInteraction(territory.id)
+    void generateNarrative(
+      `Territory intelligence check in ${territory.name}. Resistance ${territory.resistanceLevel}/5, influence ${territory.influence}%, controller ${territory.controller}. Offer a negotiation or intimidation response.`,
+      `territory_brief_${territory.id}`
+    )
+  }
+
+  function handleRegionChange(region: 'italy' | 'usa') {
+    if (region === activeRegion) return
+    setRegionTransitionTitle('CROSSING THE ATLANTIC')
+    setTimeout(() => setRegionTransitionTitle(null), REGION_TRANSITION_DURATION_MS)
+    setActiveRegion(region)
   }
 
   return (
@@ -63,7 +87,7 @@ export default function WarRoomScreen() {
           {(['italy', 'usa'] as const).map((r) => (
             <button
               key={r}
-              onClick={() => setActiveRegion(r)}
+              onClick={() => handleRegionChange(r)}
               className={`px-5 py-2.5 font-label text-[10px] uppercase tracking-widest transition-all ${
                 activeRegion === r
                   ? 'bg-primary-container text-primary'
@@ -89,7 +113,7 @@ export default function WarRoomScreen() {
               {regionTerritories.map((t) => (
                 <button
                   key={t.id}
-                  onClick={() => setSelectedTerritory(t)}
+                  onClick={() => inspectTerritory(t)}
                   style={{
                     position: 'absolute',
                     left: `${t.positionX}%`,
@@ -99,13 +123,18 @@ export default function WarRoomScreen() {
                   className="group flex flex-col items-center"
                   aria-label={t.name}
                 >
-                  <div
-                    className={`rounded-full border-2 transition-all ${
+                  <div className="relative">
+                    {t.resistanceLevel >= 4 && (
+                      <span className="absolute inset-0 -m-2 rounded-full bg-error/30 animate-ping" />
+                    )}
+                    <div
+                    className={`relative rounded-full border-2 transition-all ${
                       selectedTerritory?.id === t.id
                         ? 'w-5 h-5 border-primary shadow-[0_0_12px_rgba(1,105,111,0.6)]'
                         : 'w-3.5 h-3.5 border-outline-variant/30 group-hover:w-4 group-hover:h-4'
                     } ${influenceClass(t.influence)}`}
-                  />
+                    />
+                  </div>
                   <span className={`font-label text-[9px] uppercase tracking-wider mt-1 whitespace-nowrap ${
                     selectedTerritory?.id === t.id ? 'text-primary' : 'text-on-surface/40 group-hover:text-on-surface'
                   }`}>
@@ -134,7 +163,7 @@ export default function WarRoomScreen() {
             {regionTerritories.map((t) => (
               <button
                 key={t.id}
-                onClick={() => setSelectedTerritory(t)}
+                onClick={() => inspectTerritory(t)}
                 className={`text-left p-4 border transition-all ${
                   selectedTerritory?.id === t.id
                     ? 'border-primary bg-primary-container/20'
@@ -272,6 +301,11 @@ export default function WarRoomScreen() {
           </button>
         </div>
       </div>
+      {regionTransitionTitle && (
+        <div className="fixed inset-0 z-[80] bg-black/80 backdrop-blur-sm flex items-center justify-center pointer-events-none">
+          <p className="font-headline text-4xl italic text-primary tracking-[0.2em] animate-pulse">{regionTransitionTitle}</p>
+        </div>
+      )}
     </div>
   )
 }
