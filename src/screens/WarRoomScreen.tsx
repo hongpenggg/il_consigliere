@@ -20,6 +20,9 @@ function controllerClass(c: string) {
   return 'text-error'
 }
 
+/** Duration in milliseconds for the cinematic region-transition title card. */
+const REGION_TRANSITION_DURATION_MS = 1200
+
 export default function WarRoomScreen() {
   const {
     territories,
@@ -67,7 +70,7 @@ export default function WarRoomScreen() {
   function handleRegionChange(region: 'italy' | 'usa') {
     if (region === activeRegion) return
     setRegionTransitionTitle('CROSSING THE ATLANTIC')
-    setTimeout(() => setRegionTransitionTitle(null), 1200)
+    setTimeout(() => setRegionTransitionTitle(null), REGION_TRANSITION_DURATION_MS)
     setActiveRegion(region)
   }
 

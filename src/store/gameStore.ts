@@ -177,7 +177,15 @@ const SEASONS: Array<StoryWorldState['season']> = ['Spring', 'Summer', 'Fall', '
 const WEEKS_PER_YEAR = 52
 const WEEKS_PER_SEASON = 13
 const TERRITORY_NEGLECT_THRESHOLD = 2
+/** Week number used as the default when a territory has never been interacted with. */
+const INITIAL_WEEK = 1
+/** How many in-game weeks pass between automatic personal-event triggers. */
+const PERSONAL_EVENT_FREQUENCY_WEEKS = 4
 
+/**
+ * Converts a philosophy axis value from the internal -5..+5 scale
+ * to a 0–100 percentage that the UI and threshold logic can consume.
+ */
 function normalizePhilosophy(value: number): number {
   return Math.round((value + 5) * 10)
 }
@@ -237,7 +245,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
   })),
   evaluateNeglectedTerritories: () => set((state) => ({
     territories: state.territories.map((territory) => {
-      const ignoredWeeks = state.storyWorld.week - (territory.lastInteractedWeek ?? 1)
+      const ignoredWeeks = state.storyWorld.week - (territory.lastInteractedWeek ?? INITIAL_WEEK)
       if (ignoredWeeks >= TERRITORY_NEGLECT_THRESHOLD && territory.controller === 'Player') {
         return { ...territory, controller: 'Contested' }
       }
@@ -407,7 +415,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
       formatWeeklyHeadline(cause, week),
       'A delayed consequence surfaces as alliances shift and pressure mounts across both coasts.'
     )
-    if (week % 4 === 0) {
+    if (week % PERSONAL_EVENT_FREQUENCY_WEEKS === 0) {
       get().triggerPersonalEvent()
     }
   },

@@ -13,6 +13,15 @@ const SEVERITY_BADGE: Record<string, string> = {
   low: 'bg-surface-container text-on-surface/50 border-outline-variant/20',
 }
 
+/** Milliseconds between each character reveal in the typewriter animation. */
+const TYPEWRITER_DELAY_MS = 24
+/** Loyalty value below which a member is considered a betrayal risk. */
+const BETRAYAL_LOYALTY_THRESHOLD = 25
+/** Suspicion level at or above which the betrayal warning is triggered. */
+const BETRAYAL_SUSPICION_THRESHOLD = 60
+/** Familiarity score at or above which hidden-intel dialogue options unlock. */
+const DEEP_TRUST_FAMILIARITY_THRESHOLD = 80
+
 export default function DialogueScreen() {
   const {
     familyMembers,
@@ -80,13 +89,13 @@ export default function DialogueScreen() {
       index += 1
       setTypewriterText(text.slice(0, index))
       if (index >= text.length) clearInterval(timer)
-    }, 24)
+    }, TYPEWRITER_DELAY_MS)
     return () => clearInterval(timer)
   }, [currentEvent?.id, currentEvent?.content])
 
   useEffect(() => {
     if (!selectedMember) return
-    if (selectedMember.loyalty < 25 && (player?.suspicion ?? 0) >= 60) {
+    if (selectedMember.loyalty < BETRAYAL_LOYALTY_THRESHOLD && (player?.suspicion ?? 0) >= BETRAYAL_SUSPICION_THRESHOLD) {
       addIntelReport({
         id: crypto.randomUUID(),
         title: 'Traitor in the Ranks',
@@ -253,7 +262,7 @@ export default function DialogueScreen() {
                       <p className="font-label text-[10px] uppercase tracking-[0.3em] text-primary/60">Consulting</p>
                       <h2 className="font-headline text-2xl italic text-on-surface">
                         {selectedMember.name}
-                        {selectedMember.familiarity >= 80 && (
+                        {selectedMember.familiarity >= DEEP_TRUST_FAMILIARITY_THRESHOLD && (
                           <span className="ml-2 font-label text-[9px] uppercase tracking-widest text-secondary">Deep Trust Unlocked</span>
                         )}
                       </h2>
@@ -277,7 +286,7 @@ export default function DialogueScreen() {
                       <p className="font-body text-on-surface-variant leading-[1.9] text-base min-h-24">
                         {typewriterText || `${selectedMember.name} awaits your instruction. Press 'Consult Again' to seek their counsel.`}
                       </p>
-                      {selectedMember.familiarity >= 80 && (
+                      {selectedMember.familiarity >= DEEP_TRUST_FAMILIARITY_THRESHOLD && (
                         <button
                           onClick={() => {
                             void generateNarrative(
